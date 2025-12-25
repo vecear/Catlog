@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle } from 'lucide-react';
+import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
-import { getTodayStatus, getLogs } from '../services/storage';
+import { getTodayStatus, getLogs, deleteLog } from '../services/storage';
 import { CareLog } from '../types';
 
 export const Home: React.FC = () => {
@@ -14,15 +14,29 @@ export const Home: React.FC = () => {
   });
   const [logs, setLogs] = useState<CareLog[]>([]);
 
+  const fetchData = async () => {
+    const todayStatus = await getTodayStatus();
+    const allLogs = await getLogs();
+    setStatus(todayStatus);
+    setLogs(allLogs);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      const todayStatus = await getTodayStatus();
-      const allLogs = await getLogs();
-      setStatus(todayStatus);
-      setLogs(allLogs);
-    };
     fetchData();
   }, []);
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent potentially triggering other click events if any
+    if (window.confirm('確定要刪除這筆紀錄嗎？')) {
+      try {
+        await deleteLog(id);
+        await fetchData(); // Refresh data
+      } catch (error) {
+        console.error(error);
+        alert('刪除失敗');
+      }
+    }
+  };
 
   // Group logs by date for the last 7 days
   const getWeeklyLogs = () => {
@@ -151,6 +165,12 @@ export const Home: React.FC = () => {
                             {renderLitterDetails(log)}
                           </div>
                         )}
+                        <button
+                          onClick={(e) => handleDelete(log.id, e)}
+                          className="ml-2 p-1.5 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   ))}
