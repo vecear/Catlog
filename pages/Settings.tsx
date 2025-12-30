@@ -16,25 +16,25 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-       <div className="flex items-center gap-4 mb-2">
+      <div className="flex items-center gap-4 mb-2">
         <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors"
+          onClick={() => navigate(-1)}
+          className="p-2 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors"
         >
-            <ArrowLeft className="w-6 h-6 text-stone-700" />
+          <ArrowLeft className="w-6 h-6 text-stone-700" />
         </button>
         <h2 className="text-2xl font-bold text-stone-800">設定</h2>
       </div>
 
       <section className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
         <h3 className="text-lg font-bold text-stone-700 mb-4 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-            危險區域
+          <AlertTriangle className="w-5 h-5 text-red-500" />
+          危ない！
         </h3>
         <p className="text-stone-500 mb-6 text-sm leading-relaxed">
-            這裡的操作將會永久影響您的資料，請謹慎使用。清除資料後無法復原。
+          這裡的操作將會永久影響您的資料，請謹慎使用。清除資料後無法復原。
         </p>
-        
+
         <button
           onClick={handleClearAll}
           className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-100 active:bg-red-200 transition-colors"
