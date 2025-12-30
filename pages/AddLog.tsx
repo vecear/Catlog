@@ -236,24 +236,24 @@ export const AddLog: React.FC = () => {
                                     現在時間
                                 </button>
                             </div>
-                            <div className="flex w-full">
-                                <div className="space-y-1 flex-1 min-w-0 mr-3">
+                            <div className="grid grid-cols-2 gap-4 w-full">
+                                <div className="space-y-1 min-w-0">
                                     <label className="text-xs text-stone-400">日期</label>
                                     <input
                                         type="date"
                                         value={date}
                                         onChange={(e) => setDate(e.target.value)}
-                                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2 py-3 text-sm text-stone-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-200"
+                                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2 py-3 text-sm text-stone-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-200 text-center"
                                         required
                                     />
                                 </div>
-                                <div className="space-y-1 flex-1 min-w-0">
+                                <div className="space-y-1 min-w-0">
                                     <label className="text-xs text-stone-400">時間</label>
                                     <input
                                         type="time"
                                         value={time}
                                         onChange={(e) => setTime(e.target.value)}
-                                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2 py-3 text-sm text-stone-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-200"
+                                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-2 py-3 text-sm text-stone-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-200 text-center"
                                         required
                                     />
                                 </div>
