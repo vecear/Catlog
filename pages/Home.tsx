@@ -216,6 +216,12 @@ export const Home: React.FC = () => {
         </div>
 
 
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <StatusCard type="food" progress={status.food} />
+          <StatusCard type="water" progress={status.water} />
+          <StatusCard type="litter" progress={status.litter} />
+        </div>
+
         {/* Weekly Scoreboard */}
         <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-4 mb-4 border border-orange-100">
           <h3 className="text-center font-bold text-stone-700 mb-1">
@@ -281,12 +287,6 @@ export const Home: React.FC = () => {
           <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
             (飼料/水 +1, 貓砂 +2)
           </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <StatusCard type="food" progress={status.food} />
-          <StatusCard type="water" progress={status.water} />
-          <StatusCard type="litter" progress={status.litter} />
         </div>
       </section>
 
