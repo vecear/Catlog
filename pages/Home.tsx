@@ -218,9 +218,10 @@ export const Home: React.FC = () => {
 
         {/* Weekly Scoreboard */}
         <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-4 mb-4 border border-orange-100">
-          <h3 className="text-center font-bold text-stone-700 mb-2">
+          <h3 className="text-center font-bold text-stone-700 mb-1">
             本週小賀更愛 <span className={`text-xl ${winner === 'RURU' ? 'text-orange-500' : winner === 'CCL' ? 'text-blue-500' : 'text-stone-600'}`}>{winner}</span>
           </h3>
+          <p className="text-center text-xs text-stone-400 mb-2">本週給小賀的愛</p>
           <div className="flex justify-center gap-8 items-center text-sm font-medium mb-2">
             <div className={`text-center text-orange-500 ${ruruScore > cclScore ? 'scale-110 font-bold' : ''} transition-transform`}>
               RURU: <span className="text-lg">{ruruScore}</span> 分
