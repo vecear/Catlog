@@ -141,7 +141,7 @@ export const Home: React.FC = () => {
 
       logs.forEach(log => {
         if (log.timestamp >= dayStart && log.timestamp < dayEnd) {
-          const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 2 : 0) + (log.actions.medication ? 2 : 0);
+          const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0);
           if (log.author === 'RURU') {
             ruruDayScore += points;
             totalRuru += points;
@@ -171,7 +171,7 @@ export const Home: React.FC = () => {
     let ruruTotal = 0;
     let cclTotal = 0;
     logs.forEach(log => {
-      const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 2 : 0) + (log.actions.medication ? 2 : 0);
+      const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0);
       if (log.author === 'RURU') ruruTotal += points;
       if (log.author === 'CCL') cclTotal += points;
     });
@@ -287,7 +287,7 @@ export const Home: React.FC = () => {
           </div>
 
           <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
-            (飼料/水/梳毛/給藥 +2, 貓砂:乾淨+1/髒+4)
+            (梳毛 +3, 飼料/水/給藥 +2, 貓砂:乾淨+1/髒+4)
           </div>
         </div>
       </section>
