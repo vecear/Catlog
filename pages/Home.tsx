@@ -191,7 +191,7 @@ export const Home: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-stone-800">今日任務</h2>
             <button
-              onClick={fetchData}
+              onClick={() => window.location.reload()}
               className={`p-1.5 rounded-full hover:bg-stone-100 text-stone-400 transition-all ${isRefreshing ? 'animate-spin text-stone-600 bg-stone-100' : ''}`}
             >
               <RefreshCw className="w-4 h-4" />
