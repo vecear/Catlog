@@ -304,27 +304,31 @@ export const Home: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2 items-center flex-wrap justify-end">
-                        {log.actions.food && <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-xs font-medium">飼料</span>}
-                        {log.actions.water && <span className="bg-[#921AFF]/10 text-[#921AFF] px-2 py-1 rounded-md text-xs font-medium">飲水</span>}
-                        {log.actions.litter && (
-                          <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md text-xs font-medium border border-emerald-100">
-                            <span className="mr-1">貓砂</span>
-                            {renderLitterDetails(log)}
-                          </div>
-                        )}
-                        <button
-                          onClick={(e) => handleEdit(log.id, e)}
-                          className="ml-2 p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-50 rounded-full transition-colors"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(log.id, e)}
-                          className="p-1.5 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex gap-2 items-center flex-wrap justify-end">
+                          {log.actions.food && <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-xs font-medium">飼料</span>}
+                          {log.actions.water && <span className="bg-[#921AFF]/10 text-[#921AFF] px-2 py-1 rounded-md text-xs font-medium">飲水</span>}
+                          {log.actions.litter && (
+                            <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md text-xs font-medium border border-emerald-100">
+                              <span className="mr-1">貓砂</span>
+                              {renderLitterDetails(log)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={(e) => handleEdit(log.id, e)}
+                            className="p-1.5 text-stone-300 hover:text-stone-600 hover:bg-stone-50 rounded-full transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => handleDelete(log.id, e)}
+                            className="p-1.5 text-stone-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
