@@ -221,13 +221,22 @@ export const Home: React.FC = () => {
           <h3 className="text-center font-bold text-stone-700 mb-2">
             本週小賀更愛 <span className={`text-xl ${winner === 'RURU' ? 'text-orange-500' : winner === 'CCL' ? 'text-blue-500' : 'text-stone-600'}`}>{winner}</span>
           </h3>
-          <div className="flex justify-center gap-8 items-center text-sm font-medium mb-6">
+          <div className="flex justify-center gap-8 items-center text-sm font-medium mb-2">
             <div className={`text-center text-orange-500 ${ruruScore > cclScore ? 'scale-110 font-bold' : ''} transition-transform`}>
               RURU: <span className="text-lg">{ruruScore}</span> 分
             </div>
             <div className="h-4 w-px bg-stone-300"></div>
             <div className={`text-center text-blue-500 ${cclScore > ruruScore ? 'scale-110 font-bold' : ''} transition-transform`}>
               CCL: <span className="text-lg">{cclScore}</span> 分
+            </div>
+          </div>
+          <div className="flex justify-center gap-6 items-center text-xs text-stone-400 mb-4">
+            <div className="text-center">
+              總積分: <span className="text-orange-400 font-medium">{ruruAllTime}</span>
+            </div>
+            <div className="h-3 w-px bg-stone-200"></div>
+            <div className="text-center">
+              總積分: <span className="text-blue-400 font-medium">{cclAllTime}</span>
             </div>
           </div>
 
