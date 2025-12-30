@@ -232,14 +232,8 @@ export const Home: React.FC = () => {
             </div>
           </div>
           <p className="text-center text-xs text-stone-400 mb-1">最初から</p>
-          <div className="flex justify-center gap-6 items-center text-xs text-stone-400 mb-4">
-            <div className="text-center">
-              總積分: <span className="text-orange-400 font-medium">{ruruAllTime}</span>
-            </div>
-            <div className="h-3 w-px bg-stone-200"></div>
-            <div className="text-center">
-              總積分: <span className="text-blue-400 font-medium">{cclAllTime}</span>
-            </div>
+          <div className="text-center text-xs text-stone-400 mb-4">
+            <span className="text-orange-400 font-medium">RURU</span>已累積<span className="text-orange-400 font-medium">{ruruAllTime}</span>愛，<span className="text-blue-400 font-medium">CCL</span>已累積<span className="text-blue-400 font-medium">{cclAllTime}</span>愛
           </div>
 
           <div className="h-[72px] w-full mb-2">
