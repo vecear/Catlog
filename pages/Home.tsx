@@ -9,9 +9,11 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<any>({
-    food: { morning: false, bedtime: false, isComplete: false },
-    water: { morning: false, bedtime: false, isComplete: false },
-    litter: { morning: false, afternoon: false, bedtime: false, isComplete: false }
+    food: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+    water: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+    litter: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+    grooming: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+    medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
   });
   const [logs, setLogs] = useState<CareLog[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -139,7 +141,7 @@ export const Home: React.FC = () => {
 
       logs.forEach(log => {
         if (log.timestamp >= dayStart && log.timestamp < dayEnd) {
-          const points = (log.actions.litter ? 2 : 0) + (log.actions.food ? 1 : 0) + (log.actions.water ? 1 : 0);
+          const points = (log.actions.litter ? 2 : 0) + (log.actions.food ? 1 : 0) + (log.actions.water ? 1 : 0) + (log.actions.grooming ? 1 : 0) + (log.actions.medication ? 1 : 0);
           if (log.author === 'RURU') {
             ruruDayScore += points;
             totalRuru += points;
@@ -169,7 +171,7 @@ export const Home: React.FC = () => {
     let ruruTotal = 0;
     let cclTotal = 0;
     logs.forEach(log => {
-      const points = (log.actions.litter ? 2 : 0) + (log.actions.food ? 1 : 0) + (log.actions.water ? 1 : 0);
+      const points = (log.actions.litter ? 2 : 0) + (log.actions.food ? 1 : 0) + (log.actions.water ? 1 : 0) + (log.actions.grooming ? 1 : 0) + (log.actions.medication ? 1 : 0);
       if (log.author === 'RURU') ruruTotal += points;
       if (log.author === 'CCL') cclTotal += points;
     });
@@ -285,7 +287,7 @@ export const Home: React.FC = () => {
           </div>
 
           <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
-            (飼料/水 +1, 貓砂 +2)
+            (飼料/水/梳毛/給藥 +1, 貓砂 +2)
           </div>
         </div>
       </section>
@@ -296,10 +298,14 @@ export const Home: React.FC = () => {
           <h2 className="text-xl font-bold text-stone-800">今日任務</h2>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-3 gap-3 mb-2">
           <StatusCard type="food" progress={status.food} />
           <StatusCard type="water" progress={status.water} />
           <StatusCard type="litter" progress={status.litter} />
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <StatusCard type="grooming" progress={status.grooming} />
+          <StatusCard type="medication" progress={status.medication} />
         </div>
       </section>
 
@@ -345,6 +351,8 @@ export const Home: React.FC = () => {
                               {renderLitterDetails(log)}
                             </div>
                           )}
+                          {log.actions.grooming && <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-md text-xs font-medium">梳毛</span>}
+                          {log.actions.medication && <span className="bg-cyan-100 text-cyan-700 px-2 py-1 rounded-md text-xs font-medium">給藥</span>}
                         </div>
                         <div className="flex flex-row gap-1 whitespace-nowrap">
                           <button
@@ -368,10 +376,10 @@ export const Home: React.FC = () => {
             ))
           )}
         </div>
-      </section>
+      </section >
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
+      < div className="fixed bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none" >
         <button
           onClick={() => navigate('/add')}
           className="pointer-events-auto bg-stone-800 text-white flex items-center gap-2 px-6 py-4 rounded-full shadow-xl hover:bg-stone-700 hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-orange-50"
@@ -379,7 +387,7 @@ export const Home: React.FC = () => {
           <Plus className="w-6 h-6" />
           <span className="font-bold text-lg">紀錄一下</span>
         </button>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };

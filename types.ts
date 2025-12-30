@@ -8,6 +8,8 @@ export interface CareLog {
     food: boolean;
     water: boolean;
     litter: boolean;
+    grooming?: boolean;
+    medication?: boolean;
   };
   stoolType?: StoolType;
   urineStatus?: UrineStatus;
@@ -18,7 +20,8 @@ export interface CareLog {
 
 export interface TaskProgress {
   morning: boolean;
-  afternoon?: boolean;
+  noon: boolean;
+  evening: boolean;
   bedtime: boolean;
   isComplete: boolean;
 }
@@ -27,10 +30,14 @@ export interface DayStatus {
   food: TaskProgress;
   water: TaskProgress;
   litter: TaskProgress;
+  grooming: TaskProgress;
+  medication: TaskProgress;
 }
 
 export enum CareActionType {
   FOOD = 'FOOD',
   WATER = 'WATER',
   LITTER = 'LITTER',
+  GROOMING = 'GROOMING',
+  MEDICATION = 'MEDICATION',
 }

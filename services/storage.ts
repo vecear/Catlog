@@ -89,11 +89,13 @@ export const clearAllLogs = async (): Promise<void> => {
 };
 
 // Helper for status calculation
-const getTimePeriod = (timestamp: number): 'morning' | 'afternoon' | 'bedtime' => {
+// Helper for status calculation
+const getTimePeriod = (timestamp: number): 'morning' | 'noon' | 'evening' | 'bedtime' => {
   const hour = new Date(timestamp).getHours();
-  if (hour < 12) return 'morning'; // 00:00 - 11:59
-  if (hour < 18) return 'afternoon'; // 12:00 - 17:59
-  return 'bedtime'; // 18:00 - 23:59
+  if (hour < 11) return 'morning'; // 00:00 - 10:59
+  if (hour < 16) return 'noon'; // 11:00 - 15:59
+  if (hour < 21) return 'evening'; // 16:00 - 20:59
+  return 'bedtime'; // 21:00 - 23:59
 };
 
 // Optimization: We could query only today's logs from Firestore
@@ -110,17 +112,20 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
     const querySnapshot = await getDocs(q);
     const todayLogs = querySnapshot.docs.map(doc => ({ ...doc.data() } as CareLog));
 
-    const initProgress = (hasAfternoon: boolean): TaskProgress => ({
+    const initProgress = (): TaskProgress => ({
       morning: false,
-      afternoon: hasAfternoon ? false : undefined,
+      noon: false,
+      evening: false,
       bedtime: false,
       isComplete: false
     });
 
     const status: DayStatus = {
-      food: initProgress(false),
-      water: initProgress(false),
-      litter: initProgress(true),
+      food: initProgress(),
+      water: initProgress(),
+      litter: initProgress(),
+      grooming: initProgress(),
+      medication: initProgress(),
     };
 
     todayLogs.forEach(log => {
@@ -128,25 +133,46 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
 
       if (log.actions.food) {
         if (period === 'morning') status.food.morning = true;
+        if (period === 'noon') status.food.noon = true;
+        if (period === 'evening') status.food.evening = true;
         if (period === 'bedtime') status.food.bedtime = true;
       }
 
       if (log.actions.water) {
         if (period === 'morning') status.water.morning = true;
+        if (period === 'noon') status.water.noon = true;
+        if (period === 'evening') status.water.evening = true;
         if (period === 'bedtime') status.water.bedtime = true;
       }
 
       if (log.actions.litter) {
         if (period === 'morning') status.litter.morning = true;
-        if (period === 'afternoon') status.litter.afternoon = true;
+        if (period === 'noon') status.litter.noon = true;
+        if (period === 'evening') status.litter.evening = true;
         if (period === 'bedtime') status.litter.bedtime = true;
+      }
+
+      if (log.actions.grooming) {
+        if (period === 'morning') status.grooming.morning = true;
+        if (period === 'noon') status.grooming.noon = true;
+        if (period === 'evening') status.grooming.evening = true;
+        if (period === 'bedtime') status.grooming.bedtime = true;
+      }
+
+      if (log.actions.medication) {
+        if (period === 'morning') status.medication.morning = true;
+        if (period === 'noon') status.medication.noon = true;
+        if (period === 'evening') status.medication.evening = true;
+        if (period === 'bedtime') status.medication.bedtime = true;
       }
     });
 
-    // Calculate completion
-    status.food.isComplete = status.food.morning && status.food.bedtime;
-    status.water.isComplete = status.water.morning && status.water.bedtime;
-    status.litter.isComplete = status.litter.morning && (status.litter.afternoon === true) && status.litter.bedtime;
+    // Calculate completion (all 4 periods must be done)
+    status.food.isComplete = status.food.morning && status.food.noon && status.food.evening && status.food.bedtime;
+    status.water.isComplete = status.water.morning && status.water.noon && status.water.evening && status.water.bedtime;
+    status.litter.isComplete = status.litter.morning && status.litter.noon && status.litter.evening && status.litter.bedtime;
+    status.grooming.isComplete = status.grooming.morning && status.grooming.noon && status.grooming.evening && status.grooming.bedtime;
+    status.medication.isComplete = status.medication.morning && status.medication.noon && status.medication.evening && status.medication.bedtime;
 
     return status;
 
@@ -154,9 +180,11 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
     console.error("Failed to calculate today's status", e);
     // Return empty status on error
     return {
-      food: { morning: false, bedtime: false, isComplete: false },
-      water: { morning: false, bedtime: false, isComplete: false },
-      litter: { morning: false, bedtime: false, afternoon: false, isComplete: false }
+      food: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+      water: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+      litter: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+      grooming: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+      medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
     };
   }
 };

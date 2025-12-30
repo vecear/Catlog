@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill } from 'lucide-react';
+import { CombIcon } from '../components/icons/CombIcon';
 import { saveLog, getLog, updateLog } from '../services/storage';
 import { CareLog, StoolType, UrineStatus } from '../types';
 import { useParams } from 'react-router-dom';
@@ -23,6 +24,8 @@ export const AddLog: React.FC = () => {
         food: false,
         water: false,
         litter: false,
+        grooming: false,
+        medication: false,
     });
     const [stoolType, setStoolType] = useState<StoolType>(null);
     const [urineStatus, setUrineStatus] = useState<UrineStatus>(null);
@@ -63,7 +66,7 @@ export const AddLog: React.FC = () => {
         const timestamp = new Date(`${date}T${time}`).getTime();
 
         // Validate that at least one action is selected
-        if (!actions.food && !actions.water && !actions.litter) {
+        if (!actions.food && !actions.water && !actions.litter && !actions.grooming && !actions.medication) {
             alert("請至少選擇一個項目！");
             return;
         }
@@ -406,6 +409,26 @@ export const AddLog: React.FC = () => {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Grooming */}
+                            <ActionButton
+                                id="grooming"
+                                label="梳毛"
+                                icon={CombIcon}
+                                active={actions.grooming}
+                                activeColorClass="bg-pink-50 border-pink-200"
+                                activeIconClass="text-pink-600"
+                            />
+
+                            {/* Medication */}
+                            <ActionButton
+                                id="medication"
+                                label="給藥"
+                                icon={Pill}
+                                active={actions.medication}
+                                activeColorClass="bg-cyan-50 border-cyan-200"
+                                activeIconClass="text-cyan-600"
+                            />
                         </section>
 
                         {/* Submit Button */}
@@ -424,6 +447,6 @@ export const AddLog: React.FC = () => {
                     </form>
                 )
             }
-        </div >
+        </div>
     );
 };

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Check, Utensils, Droplets, Trash2 } from 'lucide-react';
+import { Check, Utensils, Droplets, Trash2, Pill } from 'lucide-react';
+import { CombIcon } from './icons/CombIcon';
 import { TaskProgress } from '../types';
 
 interface StatusCardProps {
-  type: 'food' | 'water' | 'litter';
+  type: 'food' | 'water' | 'litter' | 'grooming' | 'medication';
   progress: TaskProgress;
 }
 
@@ -32,6 +33,22 @@ export const StatusCard: React.FC<StatusCardProps> = ({ type, progress }) => {
       activeColor: 'bg-emerald-400',
       textColor: 'text-emerald-700',
       checkColor: 'bg-emerald-500',
+    },
+    grooming: {
+      label: '梳毛',
+      icon: CombIcon,
+      color: 'bg-pink-100',
+      activeColor: 'bg-pink-400',
+      textColor: 'text-pink-700',
+      checkColor: 'bg-pink-500',
+    },
+    medication: {
+      label: '給藥',
+      icon: Pill,
+      color: 'bg-cyan-100',
+      activeColor: 'bg-cyan-400',
+      textColor: 'text-cyan-700',
+      checkColor: 'bg-cyan-500',
     },
   };
 
@@ -72,14 +89,12 @@ export const StatusCard: React.FC<StatusCardProps> = ({ type, progress }) => {
       </span>
 
       {/* Progress Indicators */}
+      {/* Progress Indicators */}
       <div className="flex items-center justify-center gap-3 w-full bg-stone-50 rounded-lg py-1.5 px-2">
-        <PeriodBadge active={progress.morning} label="早上" />
-
-        {progress.afternoon !== undefined && (
-          <PeriodBadge active={progress.afternoon} label="下午" />
-        )}
-
-        <PeriodBadge active={progress.bedtime} label="睡前" />
+        <PeriodBadge active={progress.morning} label="早" />
+        <PeriodBadge active={progress.noon} label="中" />
+        <PeriodBadge active={progress.evening} label="晚" />
+        <PeriodBadge active={progress.bedtime} label="睡" />
       </div>
     </div>
   );
