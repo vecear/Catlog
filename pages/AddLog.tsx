@@ -205,21 +205,34 @@ export const AddLog: React.FC = () => {
                                 <h3 className="text-sm font-bold uppercase tracking-wider">紀錄人</h3>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                {(['RURU', 'CCL'] as const).map((name) => (
-                                    <button
-                                        key={name}
-                                        type="button"
-                                        onClick={() => setAuthor(name)}
-                                        className={`
-                            py-3 px-4 rounded-xl font-bold transition-all duration-200
-                            ${author === name
-                                                ? 'bg-stone-700 text-white shadow-lg ring-2 ring-stone-200'
-                                                : 'bg-stone-50 text-stone-400 hover:bg-stone-100'}
-                        `}
-                                    >
-                                        {name}
-                                    </button>
-                                ))}
+                                {(['RURU', 'CCL'] as const).map((name) => {
+                                    const isActive = author === name;
+                                    let activeClass = '';
+
+                                    if (isActive) {
+                                        if (name === 'RURU') {
+                                            activeClass = 'bg-orange-500 text-white shadow-lg shadow-orange-200 ring-2 ring-orange-100';
+                                        } else {
+                                            activeClass = 'bg-blue-500 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100';
+                                        }
+                                    } else {
+                                        activeClass = 'bg-stone-50 text-stone-400 hover:bg-stone-100';
+                                    }
+
+                                    return (
+                                        <button
+                                            key={name}
+                                            type="button"
+                                            onClick={() => setAuthor(name)}
+                                            className={`
+                                                py-3 px-4 rounded-xl font-bold transition-all duration-200
+                                                ${activeClass}
+                                            `}
+                                        >
+                                            {name}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </section>
 
@@ -277,8 +290,8 @@ export const AddLog: React.FC = () => {
                                     label="更換飲水"
                                     icon={Droplets}
                                     active={actions.water}
-                                    activeColorClass="bg-blue-50 border-blue-200"
-                                    activeIconClass="text-blue-600"
+                                    activeColorClass="bg-purple-50 border-purple-200"
+                                    activeIconClass="text-purple-600"
                                 />
 
                                 {/* Litter Section with details */}

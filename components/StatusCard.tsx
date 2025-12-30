@@ -20,10 +20,10 @@ export const StatusCard: React.FC<StatusCardProps> = ({ type, progress }) => {
     water: {
       label: '更換飲水',
       icon: Droplets,
-      color: 'bg-blue-100',
-      activeColor: 'bg-blue-400',
-      textColor: 'text-blue-700',
-      checkColor: 'bg-blue-500',
+      color: 'bg-purple-100',
+      activeColor: 'bg-purple-400',
+      textColor: 'text-purple-700',
+      checkColor: 'bg-purple-500',
     },
     litter: {
       label: '清理貓砂',
@@ -43,11 +43,11 @@ export const StatusCard: React.FC<StatusCardProps> = ({ type, progress }) => {
         flex flex-col items-center gap-1 transition-all duration-300
         ${active ? 'opacity-100 scale-110' : 'opacity-40 grayscale'}
     `}>
-        <div className={`
+      <div className={`
             w-2 h-2 rounded-full 
             ${active ? checkColor : 'bg-stone-300'}
         `} />
-        <span className="text-[10px] font-bold text-stone-500">{label}</span>
+      <span className="text-[10px] font-bold text-stone-500">{label}</span>
     </div>
   );
 
@@ -66,20 +66,20 @@ export const StatusCard: React.FC<StatusCardProps> = ({ type, progress }) => {
           <Icon className={`w-7 h-7 ${textColor}`} />
         )}
       </div>
-      
+
       <span className={`font-bold text-sm mb-3 ${isDone ? 'text-stone-400' : 'text-stone-700'}`}>
         {label}
       </span>
 
       {/* Progress Indicators */}
       <div className="flex items-center justify-center gap-3 w-full bg-stone-50 rounded-lg py-1.5 px-2">
-         <PeriodBadge active={progress.morning} label="早上" />
-         
-         {progress.afternoon !== undefined && (
-            <PeriodBadge active={progress.afternoon} label="下午" />
-         )}
+        <PeriodBadge active={progress.morning} label="早上" />
 
-         <PeriodBadge active={progress.bedtime} label="睡前" />
+        {progress.afternoon !== undefined && (
+          <PeriodBadge active={progress.afternoon} label="下午" />
+        )}
+
+        <PeriodBadge active={progress.bedtime} label="睡前" />
       </div>
     </div>
   );
