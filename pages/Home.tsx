@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
+import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
 import { getTodayStatus, getLogs, deleteLog } from '../services/storage';
 import { CareLog } from '../types';
@@ -13,7 +13,8 @@ export const Home: React.FC = () => {
     water: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
     litter: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
     grooming: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
-    medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
+    medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+    weight: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
   });
   const [logs, setLogs] = useState<CareLog[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -141,7 +142,7 @@ export const Home: React.FC = () => {
 
       logs.forEach(log => {
         if (log.timestamp >= dayStart && log.timestamp < dayEnd) {
-          const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0);
+          const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
           if (log.author === 'RURU') {
             ruruDayScore += points;
             totalRuru += points;
@@ -171,13 +172,26 @@ export const Home: React.FC = () => {
     let ruruTotal = 0;
     let cclTotal = 0;
     logs.forEach(log => {
-      const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0);
+      const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
       if (log.author === 'RURU') ruruTotal += points;
       if (log.author === 'CCL') cclTotal += points;
     });
     return { ruruTotal, cclTotal };
   };
   const { ruruTotal: ruruAllTime, cclTotal: cclAllTime } = getAllTimeTotals();
+
+  // Get weight data for chart
+  const getWeightChartData = () => {
+    return logs
+      .filter(log => log.weight)
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(log => ({
+        date: new Date(log.timestamp).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' }),
+        weight: log.weight
+      }));
+  };
+  const weightChartData = getWeightChartData();
+  const hasWeightData = weightChartData.length > 0;
 
   // Generate random cat message
   const generateCatMessage = () => {
@@ -287,7 +301,7 @@ export const Home: React.FC = () => {
           </div>
 
           <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
-            (梳毛 +3, 飼料/水/給藥 +2, 貓砂:乾淨+1/髒+4)
+            (梳毛 +3, 飼料/水/給藥/體重 +2, 貓砂:乾淨+1/髒+4)
           </div>
         </div>
       </section>
@@ -303,9 +317,69 @@ export const Home: React.FC = () => {
           <StatusCard type="water" progress={status.water} />
           <StatusCard type="litter" progress={status.litter} />
         </div>
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-3 gap-3 mb-4">
           <StatusCard type="grooming" progress={status.grooming} />
           <StatusCard type="medication" progress={status.medication} />
+          <StatusCard type="weight" progress={status.weight} />
+        </div>
+      </section>
+
+      {/* Weight Change Section */}
+      <section>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Scale className="w-5 h-5 text-[#EA7500]" />
+          <h2 className="text-lg font-bold text-stone-700">體重變化</h2>
+          <span className="text-xs text-stone-400">(過去14天)</span>
+        </div>
+        <div className="bg-gradient-to-r from-[#EA7500]/10 to-amber-50 rounded-2xl p-4 border border-[#EA7500]/20">
+          {hasWeightData ? (
+            <>
+              <div className="h-[80px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weightChartData.slice(-14)} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EA7500" opacity={0.3} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 9, fill: '#78716c' }}
+                      axisLine={false}
+                      tickLine={false}
+                      interval={2}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: '#78716c' }}
+                      axisLine={false}
+                      tickLine={false}
+                      domain={['dataMin - 0.3', 'dataMax + 0.3']}
+                      tickFormatter={(value) => `${value.toFixed(1)}`}
+                    />
+                    <Tooltip
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      formatter={(value: number) => [`${value.toFixed(1)} 公斤`, '體重']}
+                      labelStyle={{ fontSize: '12px', color: '#78716c', marginBottom: '4px' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="#EA7500"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: '#EA7500', strokeWidth: 0 }}
+                      activeDot={{ r: 6 }}
+                      connectNulls
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              {logs.some(log => log.weight) && (
+                <div className="text-center text-xs text-stone-500 mt-2">
+                  最新體重：<span className="font-bold text-[#EA7500]">{logs.filter(log => log.weight).sort((a, b) => b.timestamp - a.timestamp)[0]?.weight?.toFixed(1)}</span> 公斤
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-8 text-stone-400 text-sm">
+              尚無體重紀錄
+            </div>
+          )}
         </div>
       </section>
 
@@ -353,6 +427,12 @@ export const Home: React.FC = () => {
                           )}
                           {log.actions.grooming && <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-md text-xs font-medium">梳毛</span>}
                           {log.actions.medication && <span className="bg-cyan-100 text-cyan-700 px-2 py-1 rounded-md text-xs font-medium">給藥</span>}
+                          {log.weight && (
+                            <span className="bg-[#EA7500]/10 text-[#EA7500] px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">
+                              <Scale className="w-3 h-3" />
+                              {log.weight.toFixed(1)} kg
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-row gap-1 whitespace-nowrap">
                           <button

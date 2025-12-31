@@ -1,8 +1,9 @@
 import { db } from './firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, where, Timestamp, getDoc, updateDoc } from 'firebase/firestore';
-import { CareLog, DayStatus, TaskProgress } from '../types';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, where, Timestamp, getDoc, updateDoc, limit } from 'firebase/firestore';
+import { CareLog, DayStatus, TaskProgress, WeightLog } from '../types';
 
 const COLLECTION_NAME = 'logs';
+const WEIGHT_COLLECTION_NAME = 'weight_logs';
 
 export const getLogs = async (): Promise<CareLog[]> => {
   try {
@@ -88,6 +89,69 @@ export const clearAllLogs = async (): Promise<void> => {
   await Promise.all(batchPromises);
 };
 
+// Weight Log Functions
+export const getWeightLogs = async (): Promise<WeightLog[]> => {
+  try {
+    const q = query(collection(db, WEIGHT_COLLECTION_NAME), orderBy('timestamp', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as WeightLog));
+  } catch (e) {
+    console.error("Failed to load weight logs from Firebase", e);
+    return [];
+  }
+};
+
+export const getLatestWeightLog = async (): Promise<WeightLog | null> => {
+  try {
+    const q = query(
+      collection(db, WEIGHT_COLLECTION_NAME),
+      orderBy('timestamp', 'desc'),
+      limit(1)
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) return null;
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as WeightLog;
+  } catch (e) {
+    console.error("Failed to get latest weight log", e);
+    return null;
+  }
+};
+
+export const saveWeightLog = async (log: WeightLog): Promise<void> => {
+  try {
+    const { id, ...logData } = log;
+    await addDoc(collection(db, WEIGHT_COLLECTION_NAME), logData);
+  } catch (e) {
+    console.error("Failed to save weight log to Firebase", e);
+    throw e;
+  }
+};
+
+export const deleteWeightLog = async (id: string): Promise<void> => {
+  try {
+    await deleteDoc(doc(db, WEIGHT_COLLECTION_NAME, id));
+  } catch (e) {
+    console.error("Failed to delete weight log", e);
+    throw e;
+  }
+};
+
+export const updateWeightLog = async (log: WeightLog): Promise<void> => {
+  try {
+    const { id, ...logData } = log;
+    if (!id) throw new Error("Weight log ID is required for update");
+    const docRef = doc(db, WEIGHT_COLLECTION_NAME, id);
+    await updateDoc(docRef, logData);
+  } catch (e) {
+    console.error("Failed to update weight log", e);
+    throw e;
+  }
+};
+
 // Helper for status calculation
 // Helper for status calculation
 const getTimePeriod = (timestamp: number): 'morning' | 'noon' | 'evening' | 'bedtime' => {
@@ -126,6 +190,7 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
       litter: initProgress(),
       grooming: initProgress(),
       medication: initProgress(),
+      weight: initProgress(),
     };
 
     todayLogs.forEach(log => {
@@ -165,6 +230,13 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
         if (period === 'evening') status.medication.evening = true;
         if (period === 'bedtime') status.medication.bedtime = true;
       }
+
+      if (log.weight !== undefined && log.weight !== null) {
+        if (period === 'morning') status.weight.morning = true;
+        if (period === 'noon') status.weight.noon = true;
+        if (period === 'evening') status.weight.evening = true;
+        if (period === 'bedtime') status.weight.bedtime = true;
+      }
     });
 
     // Calculate completion (all 4 periods must be done)
@@ -173,6 +245,7 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
     status.litter.isComplete = status.litter.morning && status.litter.noon && status.litter.evening && status.litter.bedtime;
     status.grooming.isComplete = status.grooming.morning && status.grooming.noon && status.grooming.evening && status.grooming.bedtime;
     status.medication.isComplete = status.medication.morning && status.medication.noon && status.medication.evening && status.medication.bedtime;
+    status.weight.isComplete = status.weight.morning && status.weight.noon && status.weight.evening && status.weight.bedtime;
 
     return status;
 
@@ -184,7 +257,8 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
       water: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
       litter: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
       grooming: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
-      medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
+      medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+      weight: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
     };
   }
 };

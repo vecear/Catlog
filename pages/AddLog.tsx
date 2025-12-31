@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill } from 'lucide-react';
+import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
-import { saveLog, getLog, updateLog } from '../services/storage';
+import { saveLog, getLog, updateLog, getLogs } from '../services/storage';
 import { CareLog, StoolType, UrineStatus } from '../types';
 import { useParams } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -41,6 +41,36 @@ export const AddLog: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Weight recording state
+    const [recordWeight, setRecordWeight] = useState(false);
+    const [weightInt, setWeightInt] = useState(6);
+    const [weightDecimal, setWeightDecimal] = useState(0);
+
+    // Load latest weight for default
+    const loadLatestWeight = async () => {
+        try {
+            const logs = await getLogs();
+            const lastWeightLog = logs
+                .filter(l => l.weight)
+                .sort((a, b) => b.timestamp - a.timestamp)[0];
+
+            if (lastWeightLog && lastWeightLog.weight) {
+                const intPart = Math.floor(lastWeightLog.weight);
+                const decPart = Math.round((lastWeightLog.weight - intPart) * 10);
+                setWeightInt(intPart);
+                setWeightDecimal(decPart);
+            }
+        } catch (error) {
+            console.error("Failed to load latest weight", error);
+        }
+    };
+
+    useEffect(() => {
+        if (!isEditMode) {
+            loadLatestWeight();
+        }
+    }, [isEditMode]);
+
     useEffect(() => {
         if (isEditMode && id) {
             const fetchLog = async () => {
@@ -56,6 +86,14 @@ export const AddLog: React.FC = () => {
                         setStoolType(log.stoolType || null);
                         setUrineStatus(log.urineStatus || null);
                         setIsLitterClean(log.isLitterClean || false);
+                    }
+                    // Load weight data if present
+                    if (log.weight !== undefined && log.weight !== null) {
+                        setRecordWeight(true);
+                        const intPart = Math.floor(log.weight);
+                        const decPart = Math.round((log.weight - intPart) * 10);
+                        setWeightInt(intPart);
+                        setWeightDecimal(decPart);
                     }
                 } else {
                     alert('找不到紀錄');
@@ -73,8 +111,9 @@ export const AddLog: React.FC = () => {
 
         const timestamp = new Date(`${date}T${time}`).getTime();
 
-        // Validate that at least one action is selected
-        if (!actions.food && !actions.water && !actions.litter && !actions.grooming && !actions.medication) {
+        // Validate that at least one action is selected OR weight is being recorded
+        const hasAnyAction = actions.food || actions.water || actions.litter || actions.grooming || actions.medication;
+        if (!hasAnyAction && !recordWeight) {
             alert("請至少選擇一個項目！");
             return;
         }
@@ -91,15 +130,16 @@ export const AddLog: React.FC = () => {
         setIsSubmitting(true);
         try {
 
-            // Duplicate declaration removed
             const logData: CareLog = {
-                id: isEditMode && id ? id : crypto.randomUUID(), // ID needed for type but ignored by save, used by update
+                id: isEditMode && id ? id : crypto.randomUUID(),
                 timestamp,
                 actions,
                 author,
                 stoolType: actions.litter ? stoolType : null,
                 urineStatus: actions.litter ? urineStatus : null,
-                isLitterClean: actions.litter ? isLitterClean : false
+                isLitterClean: actions.litter ? isLitterClean : undefined,
+                weight: recordWeight ? (weightInt + weightDecimal / 10) : undefined,
+                note: ''
             };
 
             if (isEditMode) {
@@ -437,6 +477,58 @@ export const AddLog: React.FC = () => {
                                 activeColorClass="bg-cyan-50 border-cyan-200"
                                 activeIconClass="text-cyan-600"
                             />
+
+                            {/* Weight Recording */}
+                            <div className={`rounded-2xl transition-all duration-300 ${recordWeight ? 'bg-[#EA7500]/10 p-2 border border-[#EA7500]/30' : ''}`}>
+                                <button
+                                    type="button"
+                                    onClick={() => setRecordWeight(!recordWeight)}
+                                    className={`
+                                        w-full p-4 rounded-2xl flex items-center gap-4 border transition-all duration-200
+                                        ${recordWeight
+                                            ? 'bg-[#EA7500]/20 border-[#EA7500]/30 shadow-md border-transparent transform scale-[1.01]'
+                                            : 'border-stone-100 bg-white text-stone-400 hover:bg-stone-50'}
+                                    `}
+                                >
+                                    <div className={`p-3 rounded-full ${recordWeight ? 'bg-white/50' : 'bg-stone-100'}`}>
+                                        <Scale className={`w-6 h-6 ${recordWeight ? 'text-[#EA7500]' : 'text-stone-400'}`} />
+                                    </div>
+                                    <span className={`font-bold text-lg flex-1 text-left ${recordWeight ? 'text-stone-700' : ''}`}>紀錄體重</span>
+                                    <div className={`
+                                        w-6 h-6 rounded-full border-2 flex items-center justify-center
+                                        ${recordWeight ? 'border-stone-600 bg-stone-600' : 'border-stone-300'}
+                                    `}>
+                                        {recordWeight && <div className="w-2 h-2 bg-white rounded-full" />}
+                                    </div>
+                                </button>
+
+                                {recordWeight && (
+                                    <div className="mt-4 animate-fade-in px-2 pb-2">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <select
+                                                value={weightInt}
+                                                onChange={(e) => setWeightInt(Number(e.target.value))}
+                                                className="h-14 w-20 text-2xl font-bold text-center bg-white border-2 border-[#EA7500]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA7500]/50 text-[#EA7500]"
+                                            >
+                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                                                    <option key={n} value={n}>{n}</option>
+                                                ))}
+                                            </select>
+                                            <span className="text-3xl font-bold text-[#EA7500]">.</span>
+                                            <select
+                                                value={weightDecimal}
+                                                onChange={(e) => setWeightDecimal(Number(e.target.value))}
+                                                className="h-14 w-20 text-2xl font-bold text-center bg-white border-2 border-[#EA7500]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA7500]/50 text-[#EA7500]"
+                                            >
+                                                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                                                    <option key={n} value={n}>{n}</option>
+                                                ))}
+                                            </select>
+                                            <span className="text-lg font-medium text-stone-500 ml-1">公斤</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </section>
 
                         {/* Submit Button */}

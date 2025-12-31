@@ -1,10 +1,10 @@
 import React from 'react';
-import { Check, Utensils, Droplets, Trash2, Pill } from 'lucide-react';
+import { Check, Utensils, Droplets, Trash2, Pill, Scale } from 'lucide-react';
 import { CombIcon } from './icons/CombIcon';
 import { TaskProgress } from '../types';
 
 interface StatusCardProps {
-  type: 'food' | 'water' | 'litter' | 'grooming' | 'medication';
+  type: 'food' | 'water' | 'litter' | 'grooming' | 'medication' | 'weight';
   progress: TaskProgress;
 }
 
@@ -49,6 +49,14 @@ export const StatusCard: React.FC<StatusCardProps> = ({ type, progress }) => {
       activeColor: 'bg-cyan-400',
       textColor: 'text-cyan-700',
       checkColor: 'bg-cyan-500',
+    },
+    weight: {
+      label: '紀錄體重',
+      icon: Scale,
+      color: 'bg-[#EA7500]/10',
+      activeColor: 'bg-[#EA7500]',
+      textColor: 'text-[#EA7500]',
+      checkColor: 'bg-[#EA7500]',
     },
   };
 

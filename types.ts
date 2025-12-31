@@ -14,6 +14,7 @@ export interface CareLog {
   stoolType?: StoolType;
   urineStatus?: UrineStatus;
   isLitterClean?: boolean;
+  weight?: number; // in kg, e.g. 4.5 (optional)
   author: 'RURU' | 'CCL';
   note?: string;
 }
@@ -32,6 +33,7 @@ export interface DayStatus {
   litter: TaskProgress;
   grooming: TaskProgress;
   medication: TaskProgress;
+  weight: TaskProgress;
 }
 
 export enum CareActionType {
@@ -40,4 +42,11 @@ export enum CareActionType {
   LITTER = 'LITTER',
   GROOMING = 'GROOMING',
   MEDICATION = 'MEDICATION',
+}
+
+export interface WeightLog {
+  id: string;
+  timestamp: number;
+  weight: number; // in kg, e.g. 4.5
+  author: 'RURU' | 'CCL';
 }
