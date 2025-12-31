@@ -31,8 +31,9 @@ export const Settings: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
 
   // Drag state
-  const [draggedOwnerId, setDraggedOwnerId] = useState<string | null>(null);
-  const [dragOverOwnerId, setDragOverOwnerId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const dragItemRef = React.useRef<string | null>(null);
+  const initialOwnersRef = React.useRef<Owner[] | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -262,50 +263,78 @@ export const Settings: React.FC = () => {
     await handleSaveProfile(newProfile);
   };
 
-  // Drag and drop handlers
-  const handleDragStart = (e: React.DragEvent, ownerId: string) => {
-    setDraggedOwnerId(ownerId);
-    e.dataTransfer.effectAllowed = 'move';
+  // Pointer Event Handlers for Cross-Platform Drag and Drop
+  const handlePointerDown = (e: React.PointerEvent, ownerId: string) => {
+    if (!profile) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Set drag state
+    setDraggingId(ownerId);
+    dragItemRef.current = ownerId;
+    initialOwnersRef.current = [...profile.owners];
+
+    // Add global listeners
+    window.addEventListener('pointermove', handleGlobalPointerMove);
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
   };
 
-  const handleDragOver = (e: React.DragEvent, ownerId: string) => {
+  const handleGlobalPointerMove = (e: PointerEvent) => {
+    if (!dragItemRef.current) return;
+
+    // Prevent scrolling on mobile while dragging
     e.preventDefault();
-    if (ownerId !== draggedOwnerId) {
-      setDragOverOwnerId(ownerId);
+
+    // Find the row under the cursor
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    const row = target?.closest('[data-owner-id]');
+
+    if (row) {
+      const targetId = row.getAttribute('data-owner-id');
+      if (targetId && targetId !== dragItemRef.current) {
+        // Perform swap
+        setProfile(currentProfile => {
+          if (!currentProfile) return null;
+          const currentIndex = currentProfile.owners.findIndex(o => o.id === dragItemRef.current);
+          const targetIndex = currentProfile.owners.findIndex(o => o.id === targetId);
+
+          if (currentIndex === -1 || targetIndex === -1) return currentProfile;
+
+          const newOwners = [...currentProfile.owners];
+          // Swap logic
+          const item = newOwners[currentIndex];
+          newOwners.splice(currentIndex, 1);
+          newOwners.splice(targetIndex, 0, item);
+
+          return { ...currentProfile, owners: newOwners };
+        });
+      }
     }
   };
 
-  const handleDragLeave = () => {
-    setDragOverOwnerId(null);
-  };
+  const handleGlobalPointerUp = async () => {
+    // Clean up listeners
+    window.removeEventListener('pointermove', handleGlobalPointerMove);
+    window.removeEventListener('pointerup', handleGlobalPointerUp);
+    window.removeEventListener('pointercancel', handleGlobalPointerUp);
 
-  const handleDrop = async (e: React.DragEvent, targetOwnerId: string) => {
-    e.preventDefault();
-    if (!profile || !draggedOwnerId || draggedOwnerId === targetOwnerId) {
-      setDraggedOwnerId(null);
-      setDragOverOwnerId(null);
-      return;
-    }
+    // Save final state to DB
+    setProfile(currentProfile => {
+      if (currentProfile) {
+        saveProfile(currentProfile).catch(err => {
+          console.error("Failed to save reordered profile", err);
+          alert("排序儲存失敗，請重試");
+          // Revert on error if needed, or just let user retry
+        });
+      }
+      return currentProfile;
+    });
 
-    const draggedIndex = profile.owners.findIndex(o => o.id === draggedOwnerId);
-    const targetIndex = profile.owners.findIndex(o => o.id === targetOwnerId);
-
-    if (draggedIndex === -1 || targetIndex === -1) return;
-
-    const newOwners = [...profile.owners];
-    const [removed] = newOwners.splice(draggedIndex, 1);
-    newOwners.splice(targetIndex, 0, removed);
-
-    const newProfile = { ...profile, owners: newOwners };
-    await handleSaveProfile(newProfile);
-
-    setDraggedOwnerId(null);
-    setDragOverOwnerId(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedOwnerId(null);
-    setDragOverOwnerId(null);
+    // Reset state
+    setDraggingId(null);
+    dragItemRef.current = null;
+    initialOwnersRef.current = null;
   };
 
   const handleUpdateOwnerColor = async (ownerId: string, color: string) => {
@@ -503,23 +532,19 @@ export const Settings: React.FC = () => {
           {profile?.owners.map((owner, index) => (
             <div
               key={owner.id}
-              draggable={editingOwnerId !== owner.id}
-              onDragStart={(e) => handleDragStart(e, owner.id)}
-              onDragOver={(e) => handleDragOver(e, owner.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, owner.id)}
-              onDragEnd={handleDragEnd}
-              className={`flex items-center justify-between p-3 bg-stone-50 rounded-xl border transition-all ${draggedOwnerId === owner.id
-                ? 'opacity-50 border-blue-300 bg-blue-50'
-                : dragOverOwnerId === owner.id
-                  ? 'border-blue-400 border-2 bg-blue-50'
+              data-owner-id={owner.id}
+              className={`flex items-center justify-between p-3 bg-stone-50 rounded-xl border transition-all ${draggingId === owner.id
+                  ? 'opacity-80 border-blue-400 bg-blue-50 shadow-lg scale-[1.02] z-10 relative'
                   : 'border-stone-100'
-                } ${editingOwnerId !== owner.id ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 {/* Drag Handle */}
                 {editingOwnerId !== owner.id && (
-                  <div className="text-stone-300 hover:text-stone-500 transition-colors">
+                  <div
+                    className="text-stone-300 hover:text-stone-500 transition-colors cursor-grab active:cursor-grabbing touch-none p-2 -ml-2"
+                    onPointerDown={(e) => handlePointerDown(e, owner.id)}
+                  >
                     <GripVertical className="w-5 h-5" />
                   </div>
                 )}
