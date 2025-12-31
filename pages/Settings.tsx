@@ -23,6 +23,7 @@ export const Settings: React.FC = () => {
   const [editingPetBirthday, setEditingPetBirthday] = useState(false);
   const [petBirthdayInput, setPetBirthdayInput] = useState('');
   const [newOwnerName, setNewOwnerName] = useState('');
+  const [newOwnerColor, setNewOwnerColor] = useState(OWNER_COLORS[0].value);
   const [showAddOwner, setShowAddOwner] = useState(false);
 
   // Import states
@@ -201,14 +202,11 @@ export const Settings: React.FC = () => {
       alert('最多只能新增 10 位主人');
       return;
     }
-    // Find unused color
-    const usedColors = profile.owners.map(o => o.color);
-    const availableColor = OWNER_COLORS.find(c => !usedColors.includes(c.value))?.value || OWNER_COLORS[0].value;
 
     const newOwner: Owner = {
       id: `owner_${Date.now()}`,
       name: newOwnerName.trim(),
-      color: availableColor,
+      color: newOwnerColor,
     };
     const newProfile = {
       ...profile,
@@ -216,6 +214,11 @@ export const Settings: React.FC = () => {
     };
     await handleSaveProfile(newProfile);
     setNewOwnerName('');
+    // Pick next available color for next time, or random
+    const usedColors = newProfile.owners.map(o => o.color);
+    const nextColor = OWNER_COLORS.find(c => !usedColors.includes(c.value))?.value || OWNER_COLORS[0].value;
+    setNewOwnerColor(nextColor);
+
     setShowAddOwner(false);
   };
 
@@ -472,7 +475,13 @@ export const Settings: React.FC = () => {
             主人管理
           </h3>
           <button
-            onClick={() => setShowAddOwner(true)}
+            onClick={() => {
+              setShowAddOwner(true);
+              // Set initial color when opening
+              const usedColors = profile?.owners.map(o => o.color) || [];
+              const nextColor = OWNER_COLORS.find(c => !usedColors.includes(c.value))?.value || OWNER_COLORS[0].value;
+              setNewOwnerColor(nextColor);
+            }}
             className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -482,16 +491,56 @@ export const Settings: React.FC = () => {
 
         {/* Add Owner Form */}
         {showAddOwner && (
-          <div className="mb-4 p-4 bg-stone-50 rounded-xl border border-stone-200 animate-fade-in">
+          <div
+            className="mb-4 p-4 rounded-xl border animate-fade-in transition-colors"
+            style={{
+              backgroundColor: `${newOwnerColor}33`,
+              borderColor: `${newOwnerColor}40`
+            }}
+          >
             <div className="flex flex-col gap-3">
-              <input
-                type="text"
-                value={newOwnerName}
-                onChange={(e) => setNewOwnerName(e.target.value)}
-                placeholder="輸入主人名稱"
-                className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-                autoFocus
-              />
+              <div className="flex items-center gap-3">
+                {/* Color Placeholder / Picker */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowColorPicker(showColorPicker === 'new' ? null : 'new')}
+                    className="w-8 h-8 rounded-full border-2 border-white shadow-md flex items-center justify-center hover:scale-110 transition-transform"
+                    style={{ backgroundColor: newOwnerColor }}
+                  >
+                    <Palette className="w-4 h-4 text-white opacity-70" />
+                  </button>
+
+                  {/* Color Picker Dropdown */}
+                  {showColorPicker === 'new' && (
+                    <div className="absolute top-10 left-0 bg-white p-3 rounded-xl shadow-xl border border-stone-200 z-50 animate-fade-in">
+                      <div className="grid grid-cols-5 gap-2 w-[200px]">
+                        {OWNER_COLORS.map((color) => (
+                          <button
+                            key={color.value}
+                            onClick={() => {
+                              setNewOwnerColor(color.value);
+                              setShowColorPicker(null);
+                            }}
+                            className={`w-8 h-8 rounded-full border-2 hover:scale-110 transition-transform ${newOwnerColor === color.value ? 'border-stone-800 ring-2 ring-offset-1 ring-stone-400' : 'border-white'
+                              }`}
+                            style={{ backgroundColor: color.value }}
+                            title={color.name}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  type="text"
+                  value={newOwnerName}
+                  onChange={(e) => setNewOwnerName(e.target.value)}
+                  placeholder="輸入主人名稱"
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  autoFocus
+                />
+              </div>
               <div className="flex items-center justify-end gap-2">
                 <button
                   onClick={() => {
@@ -520,9 +569,13 @@ export const Settings: React.FC = () => {
             <div
               key={owner.id}
               data-owner-id={owner.id}
-              className={`flex items-center justify-between p-3 bg-stone-50 rounded-xl border transition-all ${draggingId === owner.id
-                ? 'opacity-80 border-blue-400 bg-blue-50 shadow-lg scale-[1.02] z-10 relative'
-                : 'border-stone-100'
+              style={{
+                backgroundColor: draggingId === owner.id ? '#eff6ff' : `${owner.color}33`, // Increased opacity to ~20%
+                borderColor: draggingId === owner.id ? '#60a5fa' : `${owner.color}40`, // Border with 25% opacity
+              }}
+              className={`flex items-center justify-between p-3 rounded-xl border transition-all ${draggingId === owner.id
+                ? 'opacity-80 shadow-lg scale-[1.02] z-10 relative'
+                : ''
                 }`}
             >
               <div className="flex items-center gap-3">
