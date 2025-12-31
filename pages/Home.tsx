@@ -291,6 +291,27 @@ export const Home: React.FC = () => {
         <div className="text-center text-xs text-stone-400 mt-2">
           {new Date().toLocaleString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' })}
         </div>
+        {profile?.pet.birthday && (() => {
+          const today = new Date();
+          const [birthYear, birthMonth, birthDay] = profile.pet.birthday.split('-').map(Number);
+          const thisYearBirthday = new Date(today.getFullYear(), birthMonth - 1, birthDay);
+          const nextBirthday = thisYearBirthday < today && thisYearBirthday.toDateString() !== today.toDateString()
+            ? new Date(today.getFullYear() + 1, birthMonth - 1, birthDay)
+            : thisYearBirthday;
+          const diffTime = nextBirthday.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const nextAge = nextBirthday.getFullYear() - birthYear;
+          const isBirthdayToday = today.getMonth() === birthMonth - 1 && today.getDate() === birthDay;
+          return (
+            <div className="text-center text-xs mt-1">
+              {isBirthdayToday ? (
+                <span className="text-orange-500 font-bold">🎂 今天是 {profile.pet.name} 的 {nextAge} 歲生日！🎉</span>
+              ) : (
+                <span className="text-stone-400">🎂 距離 {nextAge} 歲生日還有 <span className="font-bold text-orange-500">{diffDays}</span> 天</span>
+              )}
+            </div>
+          );
+        })()}
         <div className="text-center text-xs text-stone-400 mt-1">
           {profile?.pet.name || '小賀'}想說: {catMessage}
         </div>
