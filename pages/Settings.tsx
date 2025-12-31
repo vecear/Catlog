@@ -748,21 +748,28 @@ export const Settings: React.FC = () => {
           匯出所有資料包含寵物資料、主人設定及所有照護紀錄，可以用於備份或轉移資料。
         </p>
 
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={handleExportData}
-            className="flex-1 flex items-center justify-center gap-2 p-4 rounded-xl bg-green-50 text-green-600 border border-green-200 font-bold hover:bg-green-100 active:bg-green-200 transition-colors"
-          >
-            <Download className="w-5 h-5" />
-            匯出資料
-          </button>
-          <button
-            onClick={handleImportData}
-            className="flex-1 flex items-center justify-center gap-2 p-4 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 font-bold hover:bg-blue-100 active:bg-blue-200 transition-colors"
+            className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-green-50 text-green-600 border border-green-200 font-bold hover:bg-green-100 active:bg-green-200 transition-colors"
           >
             <Upload className="w-5 h-5" />
-            匯入資料
+            匯出資料
           </button>
+          <div className="relative w-full">
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImportData}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <button
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 font-bold hover:bg-blue-100 active:bg-blue-200 transition-colors"
+            >
+              <Download className="w-5 h-5" />
+              匯入資料
+            </button>
+          </div>
         </div>
       </section>
 
@@ -770,7 +777,7 @@ export const Settings: React.FC = () => {
       <section className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
         <h3 className="text-lg font-bold text-stone-700 mb-4 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-red-500" />
-          危ない！
+          超級危險！
         </h3>
         <p className="text-stone-500 mb-6 text-sm leading-relaxed">
           這裡的操作將會永久影響您的資料，請謹慎使用。清除資料後無法復原。
