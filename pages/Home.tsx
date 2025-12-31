@@ -6,6 +6,15 @@ import { getTodayStatus, getLogs, deleteLog, getProfile } from '../services/stor
 import { CareLog, AppProfile, Owner } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
+const PET_TITLES = [
+  "拆家王", "暴走王", "睡神王", "肥宅王", "臭臉王",
+  "夜衝王", "刮抓王", "液態王", "吵醒王", "翻肚王",
+  "破壞王", "吃貨王", "瞪人王", "卡屎王", "廢萌王",
+  "皇帝王", "小霸王", "毛球王", "跳桌王", "偷吃王",
+  "開門王", "鬼叫王", "撒嬌王", "冷眼王", "軟爛王",
+  "毛怪王", "掉毛王", "咬手王", "貼身王", "瞬移王"
+];
+
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<any>({
@@ -21,6 +30,10 @@ export const Home: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [profile, setProfile] = useState<AppProfile | null>(null);
+
+  const randomTitle = useMemo(() => {
+    return PET_TITLES[Math.floor(Math.random() * PET_TITLES.length)];
+  }, []);
 
   const fetchData = async () => {
     setIsRefreshing(true);
@@ -272,7 +285,10 @@ export const Home: React.FC = () => {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-stone-800 tracking-tight flex items-center gap-2">
               <span className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-lg">🐱</span>
-              {profile?.pet.name || '小賀'}の生活日記
+              <span>
+                <span className="text-orange-500 mr-1">{randomTitle}</span>
+                {profile?.pet.name || '小賀'}的生活
+              </span>
             </h1>
             <button
               onClick={() => window.location.reload()}
@@ -348,7 +364,7 @@ export const Home: React.FC = () => {
               );
             })}
           </div>
-          <p className="text-center text-xs text-stone-400 mb-1">最初から</p>
+          <p className="text-center text-xs text-stone-400 mb-1">累積總分</p>
           <div className="text-center text-xs text-stone-400 mb-4">
             {profile?.owners.map((owner, index) => (
               <span key={owner.id}>
