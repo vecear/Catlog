@@ -12,9 +12,17 @@ export const AddLog: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const isEditMode = !!id;
 
+    // Helper function to format date in local timezone (YYYY-MM-DD)
+    const formatLocalDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     // Default to current date and time
     const now = new Date();
-    const defaultDate = now.toISOString().split('T')[0];
+    const defaultDate = formatLocalDate(now);
     const defaultTime = now.toTimeString().slice(0, 5); // HH:MM
 
     const [date, setDate] = useState(defaultDate);
@@ -40,7 +48,7 @@ export const AddLog: React.FC = () => {
                 const log = await getLog(id);
                 if (log) {
                     const dateObj = new Date(log.timestamp);
-                    setDate(dateObj.toISOString().split('T')[0]);
+                    setDate(formatLocalDate(dateObj));
                     setTime(dateObj.toTimeString().slice(0, 5));
                     setAuthor(log.author);
                     setActions(log.actions);
@@ -147,7 +155,7 @@ export const AddLog: React.FC = () => {
 
     const handleSetCurrentTime = () => {
         const now = new Date();
-        setDate(now.toISOString().split('T')[0]);
+        setDate(formatLocalDate(now));
         setTime(now.toTimeString().slice(0, 5));
     };
 
