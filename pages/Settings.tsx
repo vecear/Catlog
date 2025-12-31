@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical } from 'lucide-react';
 import { clearAllLogs, getProfile, saveProfile, getLogs, saveLog } from '../services/storage';
 import { AppProfile, Owner, OWNER_COLORS } from '../types';
 
@@ -246,21 +246,6 @@ export const Settings: React.FC = () => {
     await handleSaveProfile(newProfile);
     setEditingOwnerId(null);
     setEditingOwnerName('');
-  };
-
-  const handleMoveOwner = async (ownerId: string, direction: 'up' | 'down') => {
-    if (!profile) return;
-    const index = profile.owners.findIndex(o => o.id === ownerId);
-    if (index === -1) return;
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === profile.owners.length - 1) return;
-
-    const newOwners = [...profile.owners];
-    const swapIndex = direction === 'up' ? index - 1 : index + 1;
-    [newOwners[index], newOwners[swapIndex]] = [newOwners[swapIndex], newOwners[index]];
-
-    const newProfile = { ...profile, owners: newOwners };
-    await handleSaveProfile(newProfile);
   };
 
   // Pointer Event Handlers for Cross-Platform Drag and Drop
@@ -534,8 +519,8 @@ export const Settings: React.FC = () => {
               key={owner.id}
               data-owner-id={owner.id}
               className={`flex items-center justify-between p-3 bg-stone-50 rounded-xl border transition-all ${draggingId === owner.id
-                  ? 'opacity-80 border-blue-400 bg-blue-50 shadow-lg scale-[1.02] z-10 relative'
-                  : 'border-stone-100'
+                ? 'opacity-80 border-blue-400 bg-blue-50 shadow-lg scale-[1.02] z-10 relative'
+                : 'border-stone-100'
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -612,24 +597,6 @@ export const Settings: React.FC = () => {
               {/* Actions */}
               {editingOwnerId !== owner.id && (
                 <div className="flex items-center gap-1">
-                  <div className="flex flex-col mr-1">
-                    <button
-                      onClick={() => handleMoveOwner(owner.id, 'up')}
-                      disabled={profile?.owners.findIndex(o => o.id === owner.id) === 0}
-                      className="p-0.5 text-stone-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="上移"
-                    >
-                      <ChevronUp className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleMoveOwner(owner.id, 'down')}
-                      disabled={profile?.owners.findIndex(o => o.id === owner.id) === (profile?.owners.length || 0) - 1}
-                      className="p-0.5 text-stone-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="下移"
-                    >
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                  </div>
                   <button
                     onClick={() => {
                       setEditingOwnerId(owner.id);
