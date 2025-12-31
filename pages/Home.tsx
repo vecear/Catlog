@@ -7,10 +7,10 @@ import { CareLog, AppProfile, Owner } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 const PET_TITLES = [
-  "拆家王", "暴走王", "睡神王", "肥宅王", "臭臉王",
+  "拆家王", "暴走王", "午睡王", "肥肥王", "臭屁王",
   "夜衝王", "刮抓王", "液態王", "吵醒王", "翻肚王",
   "破壞王", "吃貨王", "瞪人王", "卡屎王", "廢萌王",
-  "皇帝王", "小霸王", "毛球王", "跳桌王", "偷吃王",
+  "黏黏王", "小霸王", "毛球王", "跳桌王", "亂吃王",
   "開門王", "鬼叫王", "撒嬌王", "冷眼王", "軟爛王",
   "毛怪王", "掉毛王", "咬手王", "貼身王", "瞬移王"
 ];
