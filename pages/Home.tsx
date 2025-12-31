@@ -221,6 +221,22 @@ export const Home: React.FC = () => {
   };
   const catMessage = generateCatMessage();
 
+  const getDailyStats = (dayLogs: CareLog[]) => {
+    const urineCount = dayLogs.filter(l => l.urineStatus === 'HAS_URINE').length;
+    const formedCount = dayLogs.filter(l => l.stoolType === 'FORMED').length;
+    const unformedCount = dayLogs.filter(l => l.stoolType === 'UNFORMED').length;
+    const diarrheaCount = dayLogs.filter(l => l.stoolType === 'DIARRHEA').length;
+
+    const stoolParts = [];
+    if (formedCount > 0) stoolParts.push(`成形${formedCount}`);
+    if (unformedCount > 0) stoolParts.push(`不成形${unformedCount}`);
+    if (diarrheaCount > 0) stoolParts.push(`腹瀉${diarrheaCount}`);
+
+    const stoolText = stoolParts.length > 0 ? stoolParts.join('，') : '0';
+
+    return `(尿尿: ${urineCount}, 便便: ${stoolText})`;
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
 
@@ -459,7 +475,12 @@ export const Home: React.FC = () => {
             <>
               {(isExpanded ? monthlyLogs : monthlyLogs.slice(0, 3)).map((dayGroup) => (
                 <div key={dayGroup.date} className="animate-fade-in-up">
-                  <h3 className="text-sm font-bold text-stone-400 mb-2 pl-1">{dayGroup.date}</h3>
+                  <h3 className="text-sm font-bold text-stone-400 mb-2 pl-1 flex items-center gap-2">
+                    <span>{dayGroup.date}</span>
+                    <span className="text-xs text-stone-300 font-normal">
+                      {getDailyStats(dayGroup.logs)}
+                    </span>
+                  </h3>
                   <div className="space-y-3">
                     {dayGroup.logs.map((log) => (
                       <div key={log.id} className="bg-white p-4 rounded-xl shadow-sm border border-stone-100 flex items-center justify-between relative overflow-hidden group">
