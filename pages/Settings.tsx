@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download } from 'lucide-react';
-import { clearAllLogs, getProfile, saveProfile, getLogs } from '../services/storage';
+import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload } from 'lucide-react';
+import { clearAllLogs, getProfile, saveProfile, getLogs, saveLog } from '../services/storage';
 import { AppProfile, Owner, OWNER_COLORS } from '../types';
 
 export const Settings: React.FC = () => {
@@ -24,6 +24,11 @@ export const Settings: React.FC = () => {
   const [petBirthdayInput, setPetBirthdayInput] = useState('');
   const [newOwnerName, setNewOwnerName] = useState('');
   const [showAddOwner, setShowAddOwner] = useState(false);
+
+  // Import states
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importData, setImportData] = useState<{ profile: AppProfile; logs: any[] } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -81,6 +86,70 @@ export const Settings: React.FC = () => {
       console.error('Export failed:', error);
       alert('❌ 匯出失敗，請稍後再試');
     }
+  };
+
+  // Import data function
+  const handleImportData = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        // Validate structure
+        if (!data.profile || !data.logs || !Array.isArray(data.logs)) {
+          alert('❌ 無效的備份檔案格式');
+          return;
+        }
+
+        // Validate profile structure
+        if (!data.profile.pet || !data.profile.owners) {
+          alert('❌ 備份檔案缺少必要資料');
+          return;
+        }
+
+        setImportData({ profile: data.profile, logs: data.logs });
+        setShowImportModal(true);
+      } catch (error) {
+        console.error('Import parse failed:', error);
+        alert('❌ 無法解析檔案，請確認是正確的 JSON 備份檔');
+      }
+    };
+    input.click();
+  };
+
+  const handleConfirmImport = async () => {
+    if (!importData) return;
+
+    setIsImporting(true);
+    try {
+      // Clear existing logs first
+      await clearAllLogs();
+
+      // Save new profile
+      await saveProfile(importData.profile);
+
+      // Save all logs
+      for (const log of importData.logs) {
+        await saveLog(log);
+      }
+
+      // Reload profile
+      await loadProfile();
+
+      setShowImportModal(false);
+      setImportData(null);
+      alert(`✅ 匯入成功！\n\n已匯入 ${importData.logs.length} 筆紀錄`);
+    } catch (error) {
+      console.error('Import failed:', error);
+      alert('❌ 匯入失敗，請稍後再試');
+    }
+    setIsImporting(false);
   };
 
   const handleBirthdaySubmit = () => {
@@ -465,16 +534,25 @@ export const Settings: React.FC = () => {
           資料管理
         </h3>
         <p className="text-stone-500 mb-4 text-sm leading-relaxed">
-          匯出所有資料包含寥物資料、主人設定及所有照護紀錄，可以用於備份或轉移資料。
+          匯出所有資料包含寵物資料、主人設定及所有照護紀錄，可以用於備份或轉移資料。
         </p>
 
-        <button
-          onClick={handleExportData}
-          className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-green-50 text-green-600 border border-green-200 font-bold hover:bg-green-100 active:bg-green-200 transition-colors"
-        >
-          <Download className="w-5 h-5" />
-          匯出所有資料
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleExportData}
+            className="flex-1 flex items-center justify-center gap-2 p-4 rounded-xl bg-green-50 text-green-600 border border-green-200 font-bold hover:bg-green-100 active:bg-green-200 transition-colors"
+          >
+            <Download className="w-5 h-5" />
+            匯出資料
+          </button>
+          <button
+            onClick={handleImportData}
+            className="flex-1 flex items-center justify-center gap-2 p-4 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 font-bold hover:bg-blue-100 active:bg-blue-200 transition-colors"
+          >
+            <Upload className="w-5 h-5" />
+            匯入資料
+          </button>
+        </div>
       </section>
 
       {/* Danger Zone Section */}
@@ -550,6 +628,72 @@ export const Settings: React.FC = () => {
       )}
 
       {/* Click outside to close color picker */}
+      {/* Import Confirmation Modal */}
+      {showImportModal && importData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+          <div className="bg-white rounded-2xl p-5 w-full max-w-[320px] shadow-xl animate-fade-in overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-500" />
+                <h3 className="text-lg font-bold text-stone-800">確認匯入</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportData(null);
+                }}
+                className="p-1 rounded-full hover:bg-stone-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-stone-400" />
+              </button>
+            </div>
+
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
+              <p className="text-orange-700 text-sm font-medium mb-2">
+                ⚠️ 注意：匯入將會覆蓋現有資料！
+              </p>
+              <p className="text-orange-600 text-xs">
+                現有的所有紀錄將被刪除，並以備份檔案中的資料取代。此動作無法復原。
+              </p>
+            </div>
+
+            <div className="bg-stone-50 rounded-xl p-4 mb-4 space-y-2">
+              <p className="text-stone-600 text-sm">
+                <span className="font-medium">寵物名稱：</span>
+                {importData.profile.pet.name}
+              </p>
+              <p className="text-stone-600 text-sm">
+                <span className="font-medium">主人數量：</span>
+                {importData.profile.owners.length} 位
+              </p>
+              <p className="text-stone-600 text-sm">
+                <span className="font-medium">紀錄數量：</span>
+                {importData.logs.length} 筆
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportData(null);
+                }}
+                className="flex-1 p-3 rounded-xl border border-stone-200 text-stone-600 font-medium hover:bg-stone-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleConfirmImport}
+                disabled={isImporting}
+                className="flex-1 p-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
+              >
+                {isImporting ? '匯入中...' : '確認匯入'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showColorPicker && (
         <div
           className="fixed inset-0 z-40"
