@@ -198,10 +198,10 @@ export const updateWeightLog = async (log: WeightLog): Promise<void> => {
 // Helper for status calculation
 const getTimePeriod = (timestamp: number): 'morning' | 'noon' | 'evening' | 'bedtime' => {
   const hour = new Date(timestamp).getHours();
-  if (hour < 11) return 'morning'; // 00:00 - 10:59
-  if (hour < 16) return 'noon'; // 11:00 - 15:59
-  if (hour < 21) return 'evening'; // 16:00 - 20:59
-  return 'bedtime'; // 21:00 - 23:59
+  if (hour >= 6 && hour < 11) return 'morning'; // 06:00 - 10:59
+  if (hour >= 11 && hour < 17) return 'noon'; // 11:00 - 16:59
+  if (hour >= 17 && hour < 23) return 'evening'; // 17:00 - 22:59
+  return 'bedtime'; // 23:00 - 05:59
 };
 
 // Optimization: We could query only today's logs from Firestore

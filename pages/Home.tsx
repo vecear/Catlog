@@ -408,7 +408,7 @@ export const Home: React.FC = () => {
           <h2 className="text-xl font-bold text-stone-800">今日任務</h2>
         </div>
         <div className="text-xs text-stone-400 mb-4 px-1">
-          早 00:00-10:59 ｜ 中 11:00-15:59 ｜ 晚 16:00-20:59 ｜ 睡 21:00-23:59
+          早 06:00-10:59 ｜ 中 11:00-16:59 ｜ 晚 17:00-22:59 ｜ 睡 23:00-05:59
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-2">
