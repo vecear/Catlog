@@ -1,9 +1,49 @@
 import { db } from './firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, where, Timestamp, getDoc, updateDoc, limit } from 'firebase/firestore';
-import { CareLog, DayStatus, TaskProgress, WeightLog } from '../types';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, where, Timestamp, getDoc, updateDoc, limit, setDoc } from 'firebase/firestore';
+import { CareLog, DayStatus, TaskProgress, WeightLog, AppProfile } from '../types';
 
 const COLLECTION_NAME = 'logs';
 const WEIGHT_COLLECTION_NAME = 'weight_logs';
+const PROFILE_COLLECTION_NAME = 'app_profile';
+const PROFILE_DOC_ID = 'main_profile';
+
+// Default profile with initial owners and pet
+export const DEFAULT_PROFILE: AppProfile = {
+  owners: [
+    { id: 'owner_1', name: 'RURU', color: '#F97316' },
+    { id: 'owner_2', name: 'CCL', color: '#3B82F6' },
+  ],
+  pet: {
+    name: '小賀',
+    birthday: '2025-06-08',
+  },
+};
+
+// Profile functions
+export const getProfile = async (): Promise<AppProfile> => {
+  try {
+    const docRef = doc(db, PROFILE_COLLECTION_NAME, PROFILE_DOC_ID);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as AppProfile;
+    }
+    // Return default if not exists
+    return DEFAULT_PROFILE;
+  } catch (e) {
+    console.error("Failed to load profile from Firebase", e);
+    return DEFAULT_PROFILE;
+  }
+};
+
+export const saveProfile = async (profile: AppProfile): Promise<void> => {
+  try {
+    const docRef = doc(db, PROFILE_COLLECTION_NAME, PROFILE_DOC_ID);
+    await setDoc(docRef, profile);
+  } catch (e) {
+    console.error("Failed to save profile to Firebase", e);
+    throw e;
+  }
+};
 
 export const getLogs = async (): Promise<CareLog[]> => {
   try {

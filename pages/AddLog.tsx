@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
-import { saveLog, getLog, updateLog, getLogs } from '../services/storage';
-import { CareLog, StoolType, UrineStatus } from '../types';
-import { useParams } from 'react-router-dom';
-import { useEffect } from 'react';
+import { saveLog, getLog, updateLog, getLogs, getProfile } from '../services/storage';
+import { CareLog, StoolType, UrineStatus, Owner } from '../types';
 
 export const AddLog: React.FC = () => {
     const navigate = useNavigate();
@@ -27,7 +25,8 @@ export const AddLog: React.FC = () => {
 
     const [date, setDate] = useState(defaultDate);
     const [time, setTime] = useState(defaultTime);
-    const [author, setAuthor] = useState<'RURU' | 'CCL'>('RURU');
+    const [author, setAuthor] = useState<string>('');
+    const [owners, setOwners] = useState<Owner[]>([]);
     const [actions, setActions] = useState({
         food: false,
         water: false,
@@ -65,7 +64,22 @@ export const AddLog: React.FC = () => {
         }
     };
 
+    // Load owners from profile
+    const loadOwners = async () => {
+        try {
+            const profile = await getProfile();
+            setOwners(profile.owners);
+            // Set default author to first owner if not in edit mode
+            if (!isEditMode && profile.owners.length > 0) {
+                setAuthor(profile.owners[0].name);
+            }
+        } catch (error) {
+            console.error('Failed to load owners', error);
+        }
+    };
+
     useEffect(() => {
+        loadOwners();
         if (!isEditMode) {
             loadLatestWeight();
         }
@@ -264,32 +278,27 @@ export const AddLog: React.FC = () => {
                                 <User className="w-4 h-4" />
                                 <h3 className="text-sm font-bold uppercase tracking-wider">紀錄人</h3>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                {(['RURU', 'CCL'] as const).map((name) => {
-                                    const isActive = author === name;
-                                    let activeClass = '';
-
-                                    if (isActive) {
-                                        if (name === 'RURU') {
-                                            activeClass = 'bg-orange-500 text-white shadow-lg shadow-orange-200 ring-2 ring-orange-100';
-                                        } else {
-                                            activeClass = 'bg-blue-500 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100';
-                                        }
-                                    } else {
-                                        activeClass = 'bg-stone-50 text-stone-400 hover:bg-stone-100';
-                                    }
-
+                            <div className={`grid gap-4 ${owners.length <= 2 ? 'grid-cols-2' : owners.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                                {owners.map((owner) => {
+                                    const isActive = author === owner.name;
                                     return (
                                         <button
-                                            key={name}
+                                            key={owner.id}
                                             type="button"
-                                            onClick={() => setAuthor(name)}
+                                            onClick={() => setAuthor(owner.name)}
                                             className={`
                                                 py-3 px-4 rounded-xl font-bold transition-all duration-200
-                                                ${activeClass}
+                                                ${isActive
+                                                    ? 'text-white shadow-lg ring-2'
+                                                    : 'bg-stone-50 text-stone-400 hover:bg-stone-100'}
                                             `}
+                                            style={isActive ? {
+                                                backgroundColor: owner.color,
+                                                boxShadow: `0 10px 15px -3px ${owner.color}40`,
+                                                ringColor: `${owner.color}20`
+                                            } : undefined}
                                         >
-                                            {name}
+                                            {owner.name}
                                         </button>
                                     );
                                 })}
