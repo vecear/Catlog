@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical } from 'lucide-react';
 import { clearAllLogs, getProfile, saveProfile, getLogs, saveLog } from '../services/storage';
 import { AppProfile, Owner, OWNER_COLORS } from '../types';
 
@@ -29,6 +29,10 @@ export const Settings: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importData, setImportData] = useState<{ profile: AppProfile; logs: any[] } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+
+  // Drag state
+  const [draggedOwnerId, setDraggedOwnerId] = useState<string | null>(null);
+  const [dragOverOwnerId, setDragOverOwnerId] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -243,6 +247,52 @@ export const Settings: React.FC = () => {
     setEditingOwnerName('');
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, ownerId: string) => {
+    setDraggedOwnerId(ownerId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, ownerId: string) => {
+    e.preventDefault();
+    if (ownerId !== draggedOwnerId) {
+      setDragOverOwnerId(ownerId);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverOwnerId(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetOwnerId: string) => {
+    e.preventDefault();
+    if (!profile || !draggedOwnerId || draggedOwnerId === targetOwnerId) {
+      setDraggedOwnerId(null);
+      setDragOverOwnerId(null);
+      return;
+    }
+
+    const draggedIndex = profile.owners.findIndex(o => o.id === draggedOwnerId);
+    const targetIndex = profile.owners.findIndex(o => o.id === targetOwnerId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const newOwners = [...profile.owners];
+    const [removed] = newOwners.splice(draggedIndex, 1);
+    newOwners.splice(targetIndex, 0, removed);
+
+    const newProfile = { ...profile, owners: newOwners };
+    await handleSaveProfile(newProfile);
+
+    setDraggedOwnerId(null);
+    setDragOverOwnerId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedOwnerId(null);
+    setDragOverOwnerId(null);
+  };
+
   const handleUpdateOwnerColor = async (ownerId: string, color: string) => {
     if (!profile) return;
     const newProfile = {
@@ -435,12 +485,29 @@ export const Settings: React.FC = () => {
 
         {/* Owner List */}
         <div className="space-y-3">
-          {profile?.owners.map((owner) => (
+          {profile?.owners.map((owner, index) => (
             <div
               key={owner.id}
-              className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-100"
+              draggable={editingOwnerId !== owner.id}
+              onDragStart={(e) => handleDragStart(e, owner.id)}
+              onDragOver={(e) => handleDragOver(e, owner.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, owner.id)}
+              onDragEnd={handleDragEnd}
+              className={`flex items-center justify-between p-3 bg-stone-50 rounded-xl border transition-all ${draggedOwnerId === owner.id
+                ? 'opacity-50 border-blue-300 bg-blue-50'
+                : dragOverOwnerId === owner.id
+                  ? 'border-blue-400 border-2 bg-blue-50'
+                  : 'border-stone-100'
+                } ${editingOwnerId !== owner.id ? 'cursor-grab active:cursor-grabbing' : ''}`}
             >
               <div className="flex items-center gap-3">
+                {/* Drag Handle */}
+                {editingOwnerId !== owner.id && (
+                  <div className="text-stone-300 hover:text-stone-500 transition-colors">
+                    <GripVertical className="w-5 h-5" />
+                  </div>
+                )}
                 {/* Color indicator */}
                 <div className="relative">
                   <button
