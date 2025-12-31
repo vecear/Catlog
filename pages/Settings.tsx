@@ -65,7 +65,7 @@ export const Settings: React.FC = () => {
       {/* Birthday Verification Modal */}
       {showBirthdayModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-          <div className="bg-white rounded-2xl p-5 w-full max-w-[280px] shadow-xl animate-fade-in">
+          <div className="bg-white rounded-2xl p-5 w-full max-w-[280px] shadow-xl animate-fade-in overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Lock className="w-5 h-5 text-orange-500" />
@@ -87,7 +87,8 @@ export const Settings: React.FC = () => {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full p-3 border border-stone-200 rounded-xl text-stone-700 text-center text-lg focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300 mb-4"
+              className="w-full max-w-full box-border p-3 border border-stone-200 rounded-xl text-stone-700 text-center text-base focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300 mb-4"
+              style={{ minWidth: 0 }}
             />
 
             <div className="flex gap-3">
