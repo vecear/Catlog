@@ -35,6 +35,8 @@ export const Settings: React.FC = () => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const dragItemRef = React.useRef<string | null>(null);
   const initialOwnersRef = React.useRef<Owner[] | null>(null);
+  const dragOverlayRef = React.useRef<HTMLDivElement>(null);
+  const dragOffsetRef = React.useRef<{ x: number, y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     loadProfile();
@@ -257,6 +259,15 @@ export const Settings: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
 
+    const row = (e.currentTarget as HTMLElement).closest('[data-owner-id]');
+    if (!row) return;
+
+    const rect = row.getBoundingClientRect();
+    dragOffsetRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+
     // Set drag state
     setDraggingId(ownerId);
     dragItemRef.current = ownerId;
@@ -273,6 +284,13 @@ export const Settings: React.FC = () => {
 
     // Prevent scrolling on mobile while dragging
     e.preventDefault();
+
+    // Update overlay position
+    if (dragOverlayRef.current) {
+      const x = e.clientX - dragOffsetRef.current.x;
+      const y = e.clientY - dragOffsetRef.current.y;
+      dragOverlayRef.current.style.transform = `translate(${x}px, ${y}px)`;
+    }
 
     // Find the row under the cursor
     const target = document.elementFromPoint(e.clientX, e.clientY);
@@ -494,8 +512,8 @@ export const Settings: React.FC = () => {
           <div
             className="mb-4 p-4 rounded-xl border animate-fade-in transition-colors"
             style={{
-              backgroundColor: `${newOwnerColor}33`,
-              borderColor: `${newOwnerColor}40`
+              backgroundColor: `${newOwnerColor}1A`,
+              borderColor: `${newOwnerColor}26`
             }}
           >
             <div className="flex flex-col gap-3">
@@ -570,11 +588,14 @@ export const Settings: React.FC = () => {
               key={owner.id}
               data-owner-id={owner.id}
               style={{
-                backgroundColor: draggingId === owner.id ? '#eff6ff' : `${owner.color}33`, // Increased opacity to ~20%
-                borderColor: draggingId === owner.id ? '#60a5fa' : `${owner.color}40`, // Border with 25% opacity
+                backgroundColor: draggingId === owner.id ? 'rgba(0,0,0,0.02)' : `${owner.color}1A`,
+                borderColor: draggingId === owner.id ? 'transparent' : `${owner.color}26`,
+                opacity: draggingId === owner.id ? 0.3 : 1,
+                borderStyle: draggingId === owner.id ? 'dashed' : 'solid',
+                borderWidth: draggingId === owner.id ? '2px' : '1px',
               }}
               className={`flex items-center justify-between p-3 rounded-xl border transition-all ${draggingId === owner.id
-                ? 'opacity-80 shadow-lg scale-[1.02] z-10 relative'
+                ? 'scale-95'
                 : ''
                 }`}
             >
@@ -671,6 +692,49 @@ export const Settings: React.FC = () => {
               )}
             </div>
           ))}
+
+          {/* Drag Overlay */}
+          {draggingId && profile?.owners.find(o => o.id === draggingId) && (
+            (() => {
+              const owner = profile!.owners.find(o => o.id === draggingId)!;
+              return (
+                <div
+                  ref={dragOverlayRef}
+                  className="fixed top-0 left-0 w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] z-50 pointer-events-none flex items-center justify-between p-3 rounded-xl border shadow-2xl"
+                  style={{
+                    // Composite the light tint (1A) over the solid background (#fafaf9) using linear-gradient
+                    // This creates a solid-looking card with the correct tint, avoiding transparency issues
+                    background: `linear-gradient(${owner.color}1A, ${owner.color}1A), #fafaf9`,
+                    borderColor: `${owner.color}26`,
+                    width: document.querySelector(`[data-owner-id="${draggingId}"]`)?.clientWidth,
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="text-stone-300 p-2 -ml-2">
+                      <GripVertical className="w-5 h-5" />
+                    </div>
+                    <div className="relative">
+                      <div
+                        className="w-8 h-8 rounded-full border-2 border-white shadow-md flex items-center justify-center"
+                        style={{ backgroundColor: owner.color }}
+                      >
+                        <Palette className="w-4 h-4 text-white opacity-70" />
+                      </div>
+                    </div>
+                    <span className="font-bold text-lg text-stone-700">{owner.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-50">
+                    <div className="p-1.5 text-stone-400 bg-stone-200 rounded-full">
+                      <Edit2 className="w-4 h-4" />
+                    </div>
+                    <div className="p-1.5 text-stone-400 bg-red-50 rounded-full">
+                      <Trash2 className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          )}
         </div>
       </section>
 
