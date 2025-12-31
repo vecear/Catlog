@@ -83,13 +83,14 @@ export const Settings: React.FC = () => {
               請選擇小賀的生日：
             </p>
 
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full max-w-full box-border p-3 border border-stone-200 rounded-xl text-stone-700 text-center text-base focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300 mb-4"
-              style={{ minWidth: 0 }}
-            />
+            <div className="flex justify-center mb-4">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="p-3 border border-stone-200 rounded-xl text-stone-700 text-center text-base focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300"
+              />
+            </div>
 
             <div className="flex gap-3">
               <button
