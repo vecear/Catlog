@@ -252,7 +252,7 @@ export const AddLog: React.FC = () => {
     );
 
     return (
-        <div className="space-y-6 animate-fade-in-up">
+        <div className="space-y-6 animate-fade-in-up max-w-lg mx-auto">
             <div className="flex items-center gap-4 mb-2">
                 <button
                     onClick={() => navigate(-1)}
@@ -543,7 +543,7 @@ export const AddLog: React.FC = () => {
                         </section>
 
                         {/* Submit Button */}
-                        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-stone-100 max-w-md mx-auto z-50">
+                        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md md:max-w-lg p-4 bg-white/80 backdrop-blur-md border-t border-stone-100 z-50">
                             <button
                                 type="submit"
                                 className="w-full bg-stone-800 text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-lg hover:bg-stone-700 active:scale-98 transition-all shadow-lg"

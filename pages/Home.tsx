@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp } from 'lucide-react';
+import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
 import { getTodayStatus, getLogs, deleteLog, getProfile } from '../services/storage';
 import { CareLog, AppProfile, Owner } from '../types';
@@ -325,9 +325,9 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 md:space-y-8 animate-fade-in">
 
-      <header className="bg-white p-4 shadow-sm z-10 sticky top-0">
+      <header className="bg-white p-4 shadow-sm z-10 sticky top-0 md:rounded-2xl md:mt-2 md:mx-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-stone-800 tracking-tight flex items-center gap-2">
@@ -380,171 +380,119 @@ export const Home: React.FC = () => {
         </div>
       </header>
 
-      {/* Weekly Scoreboard */}
-      <section>
-        <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-4 mb-4 border border-orange-100">
-          <h3 className="text-center font-bold text-stone-700 mb-1">
-            {winnerInfo?.type === 'none' ? (
-              <>本週{profile?.pet.name || '小賀'}<span className="text-[#CE0000] text-xl">還沒有愛</span></>
-            ) : winnerInfo?.type === 'tie' ? (
-              <>本週{profile?.pet.name || '小賀'}愛大家<span className="text-[#CE0000] text-xl">一樣多</span></>
-            ) : winnerInfo?.type === 'winner' ? (
-              <>本週{profile?.pet.name || '小賀'}更愛 <span style={{ color: getOwnerByName(winnerInfo.name)?.color }} className="text-xl">{winnerInfo.name}</span></>
-            ) : null}
-          </h3>
-          <p className="text-center text-xs text-stone-400 mb-2">本週給{profile?.pet.name || '小賀'}的愛 ({weekRange})</p>
-          <div className="flex justify-center gap-4 items-center text-sm font-medium mb-2 flex-wrap">
-            {profile?.owners.map((owner, index) => {
-              const score = ownerScores[owner.name] || 0;
-              const maxScore = Math.max(...Object.values(ownerScores));
-              const isWinning = score === maxScore && score > 0;
-              return (
-                <React.Fragment key={owner.id}>
-                  {index > 0 && <div className="h-4 w-px bg-stone-300"></div>}
-                  <div
-                    className={`text-center ${isWinning ? 'scale-110 font-bold' : ''} transition-transform`}
-                    style={{ color: owner.color }}
-                  >
-                    {owner.name}: <span className="text-lg">{score}</span> 分
-                  </div>
-                </React.Fragment>
-              );
-            })}
-          </div>
-          <p className="text-center text-xs text-stone-400 mb-1">全部累積總分</p>
-          <div className="text-center text-xs text-stone-400 mb-4">
-            {profile?.owners.map((owner, index) => (
-              <span key={owner.id}>
-                {index > 0 && '，'}
-                <span style={{ color: owner.color }} className="font-medium">{owner.name}</span>
-                累積<span style={{ color: owner.color }} className="font-medium">{allTimeTotals[owner.name] || 0}</span>分愛
-              </span>
-            ))}
-          </div>
-
-          <p className="text-center text-xs text-stone-400 mb-1">過去7天</p>
-          <div className="h-[72px] w-full mb-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fed7aa" opacity={0.5} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: '#78716c' }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: '#78716c' }}
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  itemStyle={{ fontSize: '12px' }}
-                  labelStyle={{ fontSize: '12px', color: '#78716c', marginBottom: '4px' }}
-                />
-                {profile?.owners.map(owner => (
-                  <Line
-                    key={owner.id}
-                    type="monotone"
-                    dataKey={owner.name}
-                    stroke={owner.color}
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: owner.color, strokeWidth: 0 }}
-                    activeDot={{ r: 5 }}
-                  />
+      {/* Desktop: Two Column Layout / Mobile: Stack */}
+      <div className="md:grid md:grid-cols-5 md:gap-6">
+        {/* Left Column - Scoreboard & Weight */}
+        <div className="md:col-span-2 space-y-6">
+          {/* Weekly Scoreboard */}
+          <section>
+            <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-4 mb-4 md:mb-0 border border-orange-100">
+              <h3 className="text-center font-bold text-stone-700 mb-1">
+                {winnerInfo?.type === 'none' ? (
+                  <>本週{profile?.pet.name || '小賀'}<span className="text-[#CE0000] text-xl">還沒有愛</span></>
+                ) : winnerInfo?.type === 'tie' ? (
+                  <>本週{profile?.pet.name || '小賀'}愛大家<span className="text-[#CE0000] text-xl">一樣多</span></>
+                ) : winnerInfo?.type === 'winner' ? (
+                  <>本週{profile?.pet.name || '小賀'}更愛 <span style={{ color: getOwnerByName(winnerInfo.name)?.color }} className="text-xl">{winnerInfo.name}</span></>
+                ) : null}
+              </h3>
+              <p className="text-center text-xs text-stone-400 mb-2">本週給{profile?.pet.name || '小賀'}的愛 ({weekRange})</p>
+              <div className="flex justify-center gap-4 items-center text-sm font-medium mb-2 flex-wrap">
+                {profile?.owners.map((owner, index) => {
+                  const score = ownerScores[owner.name] || 0;
+                  const maxScore = Math.max(...Object.values(ownerScores));
+                  const isWinning = score === maxScore && score > 0;
+                  return (
+                    <React.Fragment key={owner.id}>
+                      {index > 0 && <div className="h-4 w-px bg-stone-300"></div>}
+                      <div
+                        className={`text-center ${isWinning ? 'scale-110 font-bold' : ''} transition-transform`}
+                        style={{ color: owner.color }}
+                      >
+                        {owner.name}: <span className="text-lg">{score}</span> 分
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+              <p className="text-center text-xs text-stone-400 mb-1">全部累積總分</p>
+              <div className="text-center text-xs text-stone-400 mb-4">
+                {profile?.owners.map((owner, index) => (
+                  <span key={owner.id}>
+                    {index > 0 && '，'}
+                    <span style={{ color: owner.color }} className="font-medium">{owner.name}</span>
+                    累積<span style={{ color: owner.color }} className="font-medium">{allTimeTotals[owner.name] || 0}</span>分愛
+                  </span>
                 ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+              </div>
 
-          <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
-            (梳毛 +3, 飼料/水/給藥/體重 +2, 貓砂:乾淨+1/髒+4)
-          </div>
-        </div>
-      </section>
-
-      {/* Today's Status Section */}
-      <section>
-        <div className="flex items-center mb-2 px-1">
-          <h2 className="text-xl font-bold text-stone-800">今日任務</h2>
-        </div>
-        <div className="text-xs text-stone-400 mb-4 px-1">
-          早 06:00-10:59 ｜ 中 11:00-16:59 ｜ 晚 17:00-22:59 ｜ 睡 23:00-05:59
-        </div>
-
-        <div className="grid grid-cols-3 gap-3 mb-2">
-          <StatusCard type="food" progress={status.food} />
-          <StatusCard type="water" progress={status.water} />
-          <StatusCard type="litter" progress={status.litter} />
-        </div>
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <StatusCard type="grooming" progress={status.grooming} />
-          <StatusCard type="medication" progress={status.medication} />
-          <StatusCard type="weight" progress={status.weight} />
-        </div>
-      </section>
-
-      {/* Weight Change Section */}
-      <section>
-        <div className="flex items-center gap-2 mb-4 px-1">
-          <Scale className="w-5 h-5 text-[#EA7500]" />
-          <h2 className="text-lg font-bold text-stone-700">體重變化</h2>
-          <span className="text-xs text-stone-400">(過去14天)</span>
-        </div>
-        <div className="bg-gradient-to-r from-[#EA7500]/10 to-amber-50 rounded-2xl p-4 border border-[#EA7500]/20">
-          {hasWeightData ? (
-            <>
-              <div className="h-[80px] w-full">
+              <p className="text-center text-xs text-stone-400 mb-1">過去7天</p>
+              <div className="h-[72px] w-full mb-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={weightChartData.slice(-14)} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EA7500" opacity={0.3} />
+                  <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fed7aa" opacity={0.5} />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 9, fill: '#78716c' }}
+                      tick={{ fontSize: 10, fill: '#78716c' }}
                       axisLine={false}
                       tickLine={false}
-                      interval={2}
+                      interval="preserveStartEnd"
                     />
                     <YAxis
                       tick={{ fontSize: 10, fill: '#78716c' }}
                       axisLine={false}
                       tickLine={false}
-                      domain={['dataMin - 0.3', 'dataMax + 0.3']}
-                      tickFormatter={(value) => `${value.toFixed(1)}`}
+                      allowDecimals={false}
                     />
                     <Tooltip
                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      formatter={(value: number) => [`${value.toFixed(1)} 公斤`, '體重']}
+                      itemStyle={{ fontSize: '12px' }}
                       labelStyle={{ fontSize: '12px', color: '#78716c', marginBottom: '4px' }}
                     />
-                    <Line
-                      type="monotone"
-                      dataKey="weight"
-                      stroke="#EA7500"
-                      strokeWidth={2}
-                      dot={{ r: 4, fill: '#EA7500', strokeWidth: 0 }}
-                      activeDot={{ r: 6 }}
-                      connectNulls
-                    />
+                    {profile?.owners.map(owner => (
+                      <Line
+                        key={owner.id}
+                        type="monotone"
+                        dataKey={owner.name}
+                        stroke={owner.color}
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: owner.color, strokeWidth: 0 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    ))}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              {logs.some(log => log.weight) && (
-                <div className="text-center text-xs text-stone-500 mt-2">
-                  最新體重：<span className="font-bold text-[#EA7500]">{logs.filter(log => log.weight).sort((a, b) => b.timestamp - a.timestamp)[0]?.weight?.toFixed(1)}</span> 公斤
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-8 text-stone-400 text-sm">
-              尚無體重紀錄
+
+              <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
+                (梳毛 +3, 飼料/水/給藥/體重 +2, 貓砂:乾淨+1/髒+4)
+              </div>
             </div>
-          )}
+          </section>
         </div>
-      </section>
+
+        {/* Right Column - Today's Tasks */}
+        <div className="md:col-span-3">
+          {/* Today's Status Section */}
+          <section className="bg-white md:rounded-2xl md:p-6 md:shadow-sm">
+            <div className="flex items-center mb-2 px-1 md:px-0">
+              <h2 className="text-xl font-bold text-stone-800">今日任務</h2>
+            </div>
+            <div className="text-xs text-stone-400 mb-4 px-1 md:px-0">
+              早 06:00-10:59 ｜ 中 11:00-16:59 ｜ 晚 17:00-22:59 ｜ 睡 23:00-05:59
+            </div>
+
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-2 md:mb-0">
+              <StatusCard type="food" progress={status.food} />
+              <StatusCard type="water" progress={status.water} />
+              <StatusCard type="litter" progress={status.litter} />
+              <StatusCard type="grooming" progress={status.grooming} />
+              <StatusCard type="medication" progress={status.medication} />
+              <StatusCard type="weight" progress={status.weight} />
+            </div>
+          </section>
+        </div>
+      </div>
 
       {/* Monthly Logs Section */}
       <section>
@@ -560,35 +508,59 @@ export const Home: React.FC = () => {
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="flex items-center gap-2 bg-white rounded-lg p-1 shadow-sm border border-stone-100">
-            <select
-              value={selectedDate.getFullYear()}
-              onChange={handleYearChange}
-              className="bg-transparent text-sm font-bold text-stone-600 py-1.5 px-2 outline-none cursor-pointer hover:bg-stone-50 rounded-md transition-colors appearance-none text-center"
-              style={{ textAlignLast: 'center' }}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1);
+                setSelectedDate(newDate);
+                setIsExpanded(false);
+              }}
+              className="p-2 rounded-lg bg-white border border-stone-100 shadow-sm text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors"
+              title="上個月"
             >
-              {Array.from({ length: 2045 - 2024 + 1 }, (_, i) => {
-                const year = 2024 + i;
-                return (
-                  <option key={year} value={year}>
-                    {year}年
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center bg-white rounded-lg p-1 shadow-sm border border-stone-100">
+              <select
+                value={selectedDate.getFullYear()}
+                onChange={handleYearChange}
+                className="bg-transparent text-sm font-bold text-stone-600 py-1.5 px-2 outline-none cursor-pointer hover:bg-stone-50 rounded-md transition-colors appearance-none text-center"
+                style={{ textAlignLast: 'center' }}
+              >
+                {Array.from({ length: 2045 - 2024 + 1 }, (_, i) => {
+                  const year = 2024 + i;
+                  return (
+                    <option key={year} value={year}>
+                      {year}年
+                    </option>
+                  );
+                })}
+              </select>
+              <div className="w-px h-4 bg-stone-200"></div>
+              <select
+                value={selectedDate.getMonth()}
+                onChange={handleMonthChange}
+                className="bg-transparent text-sm font-bold text-stone-600 py-1.5 px-2 outline-none cursor-pointer hover:bg-stone-50 rounded-md transition-colors appearance-none text-center"
+                style={{ textAlignLast: 'center' }}
+              >
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i + 1}月
                   </option>
-                );
-              })}
-            </select>
-            <div className="w-px h-4 bg-stone-200"></div>
-            <select
-              value={selectedDate.getMonth()}
-              onChange={handleMonthChange}
-              className="bg-transparent text-sm font-bold text-stone-600 py-1.5 px-2 outline-none cursor-pointer hover:bg-stone-50 rounded-md transition-colors appearance-none text-center"
-              style={{ textAlignLast: 'center' }}
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1);
+                setSelectedDate(newDate);
+                setIsExpanded(false);
+              }}
+              className="p-2 rounded-lg bg-white border border-stone-100 shadow-sm text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors"
+              title="下個月"
             >
-              {Array.from({ length: 12 }, (_, i) => (
-                <option key={i} value={i}>
-                  {i + 1}月
-                </option>
-              ))}
-            </select>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
         <div className="space-y-6">
@@ -695,7 +667,7 @@ export const Home: React.FC = () => {
       </section >
 
       {/* Floating Action Button */}
-      < div className="fixed bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none" >
+      <div className="fixed bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
         <button
           onClick={() => navigate('/add')}
           className="pointer-events-auto bg-stone-800 text-white flex items-center gap-2 px-6 py-4 rounded-full shadow-xl hover:bg-stone-700 hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-orange-50"
@@ -703,7 +675,7 @@ export const Home: React.FC = () => {
           <Plus className="w-6 h-6" />
           <span className="font-bold text-lg">紀錄一下</span>
         </button>
-      </div >
+      </div>
     </div >
   );
 };

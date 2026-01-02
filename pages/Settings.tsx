@@ -374,7 +374,7 @@ export const Settings: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="space-y-6 animate-fade-in-up max-w-2xl mx-auto">
       <div className="flex items-center gap-4 mb-2">
         <button
           onClick={() => navigate(-1)}
