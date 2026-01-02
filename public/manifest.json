@@ -2,23 +2,24 @@
     "name": "小賀Log",
     "short_name": "小賀Log",
     "description": "小賀的日常記錄",
-    "start_url": "/",
+    "start_url": "/Catlog/",
+    "scope": "/Catlog/",
     "display": "standalone",
     "background_color": "#fff7ed",
     "theme_color": "#f97316",
     "icons": [
         {
-            "src": "/favicon.png",
+            "src": "/Catlog/favicon.png",
             "sizes": "64x64",
             "type": "image/png"
         },
         {
-            "src": "/icon-192.png",
+            "src": "/Catlog/icon-192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "/icon-512.png",
+            "src": "/Catlog/icon-512.png",
             "sizes": "512x512",
             "type": "image/png"
         }
