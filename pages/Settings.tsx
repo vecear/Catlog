@@ -31,12 +31,17 @@ export const Settings: React.FC = () => {
   const [importData, setImportData] = useState<{ profile: AppProfile; logs: any[] } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  // Drag state
+  // Drag state for owners
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const dragItemRef = React.useRef<string | null>(null);
   const initialOwnersRef = React.useRef<Owner[] | null>(null);
   const dragOverlayRef = React.useRef<HTMLDivElement>(null);
   const dragOffsetRef = React.useRef<{ x: number, y: number }>({ x: 0, y: 0 });
+
+  // Drag state for action order
+  const [draggingActionId, setDraggingActionId] = useState<string | null>(null);
+  const actionDragOverlayRef = React.useRef<HTMLDivElement>(null);
+  const actionDragOffsetRef = React.useRef<{ x: number, y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     loadProfile();
@@ -735,6 +740,147 @@ export const Settings: React.FC = () => {
               );
             })()
           )}
+        </div>
+      </section>
+
+      {/* Action Order Section */}
+      <section className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+        <h3 className="text-lg font-bold text-stone-700 mb-2 flex items-center gap-2">
+          <GripVertical className="w-5 h-5 text-stone-400" />
+          項目順序
+        </h3>
+        <p className="text-stone-400 text-sm mb-4">拖拉調整新增紀錄中項目的顯示順序</p>
+
+        <div className="space-y-2">
+          {(profile?.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight']).map((actionId) => {
+            const actionLabels: Record<string, { name: string; color: string }> = {
+              food: { name: '飼料', color: '#EAB308' },
+              water: { name: '飲水', color: '#921AFF' },
+              litter: { name: '貓砂', color: '#10B981' },
+              grooming: { name: '梳毛', color: '#EC4899' },
+              medication: { name: '給藥', color: '#06B6D4' },
+              bath: { name: '洗澡', color: '#3B82F6' },
+              weight: { name: '體重', color: '#EA7500' },
+            };
+            const action = actionLabels[actionId];
+            if (!action) return null;
+            const isDragging = draggingActionId === actionId;
+
+            return (
+              <div
+                key={actionId}
+                data-action-id={actionId}
+                className="flex items-center gap-3 p-3 rounded-xl border cursor-grab active:cursor-grabbing touch-none transition-all"
+                style={{
+                  backgroundColor: isDragging ? 'rgba(0,0,0,0.02)' : `${action.color}10`,
+                  borderColor: isDragging ? 'transparent' : `${action.color}30`,
+                  opacity: isDragging ? 0.3 : 1,
+                  borderStyle: isDragging ? 'dashed' : 'solid',
+                  borderWidth: isDragging ? '2px' : '1px',
+                }}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  setDraggingActionId(actionId);
+
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  actionDragOffsetRef.current = {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top,
+                  };
+
+                  if (actionDragOverlayRef.current) {
+                    const x = e.clientX - actionDragOffsetRef.current.x;
+                    const y = e.clientY - actionDragOffsetRef.current.y;
+                    actionDragOverlayRef.current.style.transform = `translate(${x}px, ${y}px)`;
+                  }
+
+                  const handleActionMove = (moveE: PointerEvent) => {
+                    moveE.preventDefault();
+
+                    if (actionDragOverlayRef.current) {
+                      const x = moveE.clientX - actionDragOffsetRef.current.x;
+                      const y = moveE.clientY - actionDragOffsetRef.current.y;
+                      actionDragOverlayRef.current.style.transform = `translate(${x}px, ${y}px)`;
+                    }
+
+                    const target = document.elementFromPoint(moveE.clientX, moveE.clientY);
+                    const row = target?.closest('[data-action-id]');
+                    if (row) {
+                      const targetId = row.getAttribute('data-action-id');
+                      if (targetId && targetId !== actionId) {
+                        setProfile(currentProfile => {
+                          if (!currentProfile) return null;
+                          const currentOrder = currentProfile.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight'];
+                          const currentIndex = currentOrder.indexOf(actionId);
+                          const targetIndex = currentOrder.indexOf(targetId);
+                          if (currentIndex === -1 || targetIndex === -1) return currentProfile;
+                          const newOrder = [...currentOrder];
+                          newOrder.splice(currentIndex, 1);
+                          newOrder.splice(targetIndex, 0, actionId);
+                          return { ...currentProfile, actionOrder: newOrder };
+                        });
+                      }
+                    }
+                  };
+
+                  const handleActionUp = () => {
+                    window.removeEventListener('pointermove', handleActionMove);
+                    window.removeEventListener('pointerup', handleActionUp);
+                    setDraggingActionId(null);
+                    setProfile(currentProfile => {
+                      if (currentProfile) {
+                        saveProfile(currentProfile);
+                      }
+                      return currentProfile;
+                    });
+                  };
+
+                  window.addEventListener('pointermove', handleActionMove);
+                  window.addEventListener('pointerup', handleActionUp);
+                }}
+              >
+                <GripVertical className="w-4 h-4 text-stone-300" />
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: action.color }}
+                />
+                <span className="font-medium text-stone-700">{action.name}</span>
+              </div>
+            );
+          })}
+
+          {/* Action Drag Overlay */}
+          {draggingActionId && (() => {
+            const actionLabels: Record<string, { name: string; color: string }> = {
+              food: { name: '飼料', color: '#EAB308' },
+              water: { name: '飲水', color: '#921AFF' },
+              litter: { name: '貓砂', color: '#10B981' },
+              grooming: { name: '梳毛', color: '#EC4899' },
+              medication: { name: '給藥', color: '#06B6D4' },
+              bath: { name: '洗澡', color: '#3B82F6' },
+              weight: { name: '體重', color: '#EA7500' },
+            };
+            const action = actionLabels[draggingActionId];
+            if (!action) return null;
+            return (
+              <div
+                ref={actionDragOverlayRef}
+                className="fixed top-0 left-0 z-50 pointer-events-none flex items-center gap-3 p-3 rounded-xl border shadow-2xl"
+                style={{
+                  background: `linear-gradient(${action.color}20, ${action.color}20), #fafaf9`,
+                  borderColor: `${action.color}40`,
+                  width: document.querySelector(`[data-action-id="${draggingActionId}"]`)?.clientWidth,
+                }}
+              >
+                <GripVertical className="w-4 h-4 text-stone-400" />
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: action.color }}
+                />
+                <span className="font-medium text-stone-700">{action.name}</span>
+              </div>
+            );
+          })()}
         </div>
       </section>
 

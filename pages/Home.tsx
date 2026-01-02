@@ -285,13 +285,43 @@ export const Home: React.FC = () => {
 
   // Get weight data for chart
   const getWeightChartData = () => {
-    return logs
+    const weightLogs = logs
       .filter(log => log.weight)
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .map(log => ({
-        date: new Date(log.timestamp).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' }),
-        weight: log.weight
-      }));
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    if (weightLogs.length === 0) return [];
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Calculate the start date window (13 days ago + today = 14 days)
+    const windowStartDate = new Date(today);
+    windowStartDate.setDate(today.getDate() - 13);
+
+    // Determine the actual start date: max(windowStartDate, firstLogDate)
+    const firstLogTime = new Date(weightLogs[0].timestamp);
+    const firstLogDate = new Date(firstLogTime.getFullYear(), firstLogTime.getMonth(), firstLogTime.getDate());
+
+    let currentDate = new Date(firstLogDate > windowStartDate ? firstLogDate : windowStartDate);
+    const data = [];
+
+    while (currentDate <= today) {
+      const dayEnd = currentDate.getTime() + 86400000;
+      // Find the latest weight recording before the end of this day
+      // This implements "carry forward" logic implicitly by finding the last known weight up to this point
+      const relevantLog = weightLogs.filter(l => l.timestamp < dayEnd).pop();
+
+      if (relevantLog && relevantLog.weight) {
+        data.push({
+          date: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' }),
+          weight: relevantLog.weight
+        });
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return data;
   };
   const weightChartData = getWeightChartData();
   const hasWeightData = weightChartData.length > 0;
@@ -457,6 +487,7 @@ export const Home: React.FC = () => {
                       axisLine={false}
                       tickLine={false}
                       interval="preserveStartEnd"
+                      padding={{ left: 20, right: 20 }}
                     />
                     <YAxis
                       tick={{ fontSize: 10, fill: '#78716c' }}
@@ -496,7 +527,7 @@ export const Home: React.FC = () => {
           {/* Today's Status Section */}
           <section>
             <div className="flex items-center gap-2 mb-2 px-1 md:px-0">
-              <CalendarDays className="w-5 h-5 text-orange-500" />
+              <CheckCircle className="w-5 h-5 text-stone-400" />
               <h2 className="text-xl font-bold text-stone-800">今日任務</h2>
             </div>
             <div className="text-xs text-stone-400 mb-4 px-1 md:px-0">
@@ -514,6 +545,55 @@ export const Home: React.FC = () => {
           </section>
         </div>
       </div>
+
+      {/* Weight Chart Section */}
+      {hasWeightData && (
+        <section className="mb-6">
+          <div className="flex items-center gap-2 mb-2 px-1 md:px-0">
+            <Scale className="w-5 h-5 text-stone-400" />
+            <h2 className="text-lg font-bold text-stone-700">體重變化</h2>
+          </div>
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-2xl border border-orange-200">
+            <div className="h-[70px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={weightChartData} margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fed7aa" opacity={0.5} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: '#78716c' }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                    padding={{ left: 20, right: 20 }}
+                  />
+                  <YAxis
+                    domain={['auto', 'auto']}
+                    tick={{ fontSize: 10, fill: '#78716c' }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={30}
+                  />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    itemStyle={{ fontSize: '12px', color: '#EA7500' }}
+                    labelStyle={{ fontSize: '12px', color: '#78716c', marginBottom: '4px' }}
+                    formatter={(value: number) => [`${value} kg`, '體重']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="weight"
+                    stroke="#EA7500"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: '#EA7500', strokeWidth: 0 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-center text-xs text-stone-400 mt-2">過去14天</p>
+          </div>
+        </section>
+      )}
 
       {/* Monthly Logs Section */}
       <section>

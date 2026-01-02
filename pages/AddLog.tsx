@@ -27,6 +27,7 @@ export const AddLog: React.FC = () => {
     const [time, setTime] = useState(defaultTime);
     const [author, setAuthor] = useState<string>('');
     const [owners, setOwners] = useState<Owner[]>([]);
+    const [actionOrder, setActionOrder] = useState<string[]>(['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight']);
     const [actions, setActions] = useState({
         food: false,
         water: false,
@@ -65,7 +66,7 @@ export const AddLog: React.FC = () => {
         }
     };
 
-    // Load owners from profile
+    // Load owners and action order from profile
     const loadOwners = async () => {
         try {
             const profile = await getProfile();
@@ -73,6 +74,10 @@ export const AddLog: React.FC = () => {
             // Set default author to first owner if not in edit mode
             if (!isEditMode && profile.owners.length > 0) {
                 setAuthor(profile.owners[0].name);
+            }
+            // Load action order
+            if (profile.actionOrder) {
+                setActionOrder(profile.actionOrder);
             }
         } catch (error) {
             console.error('Failed to load owners', error);
@@ -222,6 +227,7 @@ export const AddLog: React.FC = () => {
         activeColorClass,
         activeIconClass
     }: {
+        key?: React.Key,
         id: keyof typeof actions,
         label: string,
         icon: React.ElementType,
@@ -347,209 +353,223 @@ export const AddLog: React.FC = () => {
                         <section className="space-y-4">
                             <h3 className="text-sm font-bold text-stone-500 uppercase tracking-wider px-1">完成項目</h3>
                             <div className="grid grid-cols-1 gap-3">
-                                <ActionButton
-                                    id="food"
-                                    label="更換飼料"
-                                    icon={Utensils}
-                                    active={actions.food}
-                                    activeColorClass="bg-yellow-50 border-yellow-200"
-                                    activeIconClass="text-yellow-600"
-                                />
-                                <ActionButton
-                                    id="water"
-                                    label="更換飲水"
-                                    icon={Droplets}
-                                    active={actions.water}
-                                    activeColorClass="bg-[#921AFF]/5 border-[#921AFF]/20"
-                                    activeIconClass="text-[#921AFF]"
-                                />
-
-                                {/* Litter Section with details */}
-                                <div className={`rounded-2xl transition-all duration-300 ${actions.litter ? 'bg-emerald-50 p-2 border border-emerald-200' : ''}`}>
-                                    <ActionButton
-                                        id="litter"
-                                        label="清理貓砂"
-                                        icon={Trash2}
-                                        active={actions.litter}
-                                        activeColorClass="bg-emerald-100 border-emerald-200"
-                                        activeIconClass="text-emerald-700"
-                                    />
-
-                                    {actions.litter && (
-                                        <div className="mt-4 animate-fade-in space-y-4 px-1 pb-2">
-
-                                            {/* Clean Option */}
-                                            <button
-                                                type="button"
-                                                onClick={handleCleanClick}
-                                                className={`w-full py-4 px-2 rounded-xl text-lg font-bold border flex items-center justify-center gap-2 transition-all ${isLitterClean
-                                                    ? 'bg-emerald-500 text-white shadow-md border-transparent transform scale-[1.02]'
-                                                    : 'bg-white border-stone-200 text-stone-500 hover:bg-stone-50'
-                                                    }`}
-                                            >
-                                                <Sparkles className={`w-5 h-5 ${isLitterClean ? 'text-white' : 'text-emerald-500'}`} />
-                                                乾淨不用清
-                                            </button>
-
-                                            {!isLitterClean && (
-                                                <div className="space-y-4 animate-fade-in">
-                                                    {/* Urine Status Selection */}
-                                                    <div className="border-t border-stone-100 pt-4">
-                                                        <h4 className="text-xs font-bold text-stone-500 mb-2 pl-1">尿尿狀態</h4>
-                                                        <div className="grid grid-cols-2 gap-2">
+                                {actionOrder.map((actionId) => {
+                                    switch (actionId) {
+                                        case 'food':
+                                            return (
+                                                <ActionButton
+                                                    key="food"
+                                                    id="food"
+                                                    label="更換飼料"
+                                                    icon={Utensils}
+                                                    active={actions.food}
+                                                    activeColorClass="bg-yellow-50 border-yellow-200"
+                                                    activeIconClass="text-yellow-600"
+                                                />
+                                            );
+                                        case 'water':
+                                            return (
+                                                <ActionButton
+                                                    key="water"
+                                                    id="water"
+                                                    label="更換飲水"
+                                                    icon={Droplets}
+                                                    active={actions.water}
+                                                    activeColorClass="bg-[#921AFF]/5 border-[#921AFF]/20"
+                                                    activeIconClass="text-[#921AFF]"
+                                                />
+                                            );
+                                        case 'litter':
+                                            return (
+                                                <div key="litter" className={`rounded-2xl transition-all duration-300 ${actions.litter ? 'bg-emerald-50 p-2 border border-emerald-200' : ''}`}>
+                                                    <ActionButton
+                                                        id="litter"
+                                                        label="清理貓砂"
+                                                        icon={Trash2}
+                                                        active={actions.litter}
+                                                        activeColorClass="bg-emerald-100 border-emerald-200"
+                                                        activeIconClass="text-emerald-700"
+                                                    />
+                                                    {actions.litter && (
+                                                        <div className="mt-4 animate-fade-in space-y-4 px-1 pb-2">
                                                             <button
                                                                 type="button"
-                                                                onClick={() => handleUrineClick('HAS_URINE')}
-                                                                className={`py-3 px-2 rounded-xl text-sm font-bold border flex items-center justify-center gap-2 transition-all ${urineStatus === 'HAS_URINE'
-                                                                    ? 'bg-sky-100 border-sky-300 text-sky-700 shadow-sm ring-1 ring-sky-200'
-                                                                    : 'bg-white border-stone-200 text-stone-400'
+                                                                onClick={handleCleanClick}
+                                                                className={`w-full py-4 px-2 rounded-xl text-lg font-bold border flex items-center justify-center gap-2 transition-all ${isLitterClean
+                                                                    ? 'bg-emerald-500 text-white shadow-md border-transparent transform scale-[1.02]'
+                                                                    : 'bg-white border-stone-200 text-stone-500 hover:bg-stone-50'
                                                                     }`}
                                                             >
-                                                                <Droplets className="w-4 h-4" />
-                                                                有尿
+                                                                <Sparkles className={`w-5 h-5 ${isLitterClean ? 'text-white' : 'text-emerald-500'}`} />
+                                                                乾淨不用清
                                                             </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleUrineClick('NO_URINE')}
-                                                                className={`py-3 px-2 rounded-xl text-sm font-bold border flex items-center justify-center gap-2 transition-all ${urineStatus === 'NO_URINE'
-                                                                    ? 'bg-stone-200 border-stone-300 text-stone-600 shadow-sm ring-1 ring-stone-200'
-                                                                    : 'bg-white border-stone-200 text-stone-400'
-                                                                    }`}
-                                                            >
-                                                                <XCircle className="w-4 h-4" />
-                                                                沒尿
-                                                            </button>
+                                                            {!isLitterClean && (
+                                                                <div className="space-y-4 animate-fade-in">
+                                                                    <div className="border-t border-stone-100 pt-4">
+                                                                        <h4 className="text-xs font-bold text-stone-500 mb-2 pl-1">尿尿狀態</h4>
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleUrineClick('HAS_URINE')}
+                                                                                className={`py-3 px-2 rounded-xl text-sm font-bold border flex items-center justify-center gap-2 transition-all ${urineStatus === 'HAS_URINE'
+                                                                                    ? 'bg-sky-100 border-sky-300 text-sky-700 shadow-sm ring-1 ring-sky-200'
+                                                                                    : 'bg-white border-stone-200 text-stone-400'
+                                                                                    }`}
+                                                                            >
+                                                                                <Droplets className="w-4 h-4" />
+                                                                                有尿
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleUrineClick('NO_URINE')}
+                                                                                className={`py-3 px-2 rounded-xl text-sm font-bold border flex items-center justify-center gap-2 transition-all ${urineStatus === 'NO_URINE'
+                                                                                    ? 'bg-stone-200 border-stone-300 text-stone-600 shadow-sm ring-1 ring-stone-200'
+                                                                                    : 'bg-white border-stone-200 text-stone-400'
+                                                                                    }`}
+                                                                            >
+                                                                                <XCircle className="w-4 h-4" />
+                                                                                沒尿
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="text-xs font-bold text-stone-500 mb-2 pl-1">便便狀態</h4>
+                                                                        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleStoolClick('FORMED')}
+                                                                                className={`py-2 px-1 rounded-lg text-sm font-bold border flex flex-col items-center gap-1 transition-all ${stoolType === 'FORMED'
+                                                                                    ? 'bg-emerald-100 border-emerald-300 text-emerald-700 shadow-sm'
+                                                                                    : 'bg-white border-stone-200 text-stone-400'
+                                                                                    }`}
+                                                                            >
+                                                                                <CheckCircle className="w-4 h-4" />
+                                                                                成形
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleStoolClick('UNFORMED')}
+                                                                                className={`py-2 px-1 rounded-lg text-sm font-bold border flex flex-col items-center gap-1 transition-all ${stoolType === 'UNFORMED'
+                                                                                    ? 'bg-orange-100 border-orange-300 text-orange-700 shadow-sm'
+                                                                                    : 'bg-white border-stone-200 text-stone-400'
+                                                                                    }`}
+                                                                            >
+                                                                                <HelpCircle className="w-4 h-4" />
+                                                                                不成形
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleStoolClick('DIARRHEA')}
+                                                                                className={`py-2 px-1 rounded-lg text-sm font-bold border flex flex-col items-center gap-1 transition-all ${stoolType === 'DIARRHEA'
+                                                                                    ? 'bg-red-100 border-red-300 text-red-700 shadow-sm'
+                                                                                    : 'bg-white border-stone-200 text-stone-400'
+                                                                                    }`}
+                                                                            >
+                                                                                <AlertCircle className="w-4 h-4" />
+                                                                                腹瀉
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    </div>
-
-                                                    {/* Stool Type Selection */}
-                                                    <div>
-                                                        <h4 className="text-xs font-bold text-stone-500 mb-2 pl-1">便便狀態</h4>
-                                                        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleStoolClick('FORMED')}
-                                                                className={`py-2 px-1 rounded-lg text-sm font-bold border flex flex-col items-center gap-1 transition-all ${stoolType === 'FORMED'
-                                                                    ? 'bg-emerald-100 border-emerald-300 text-emerald-700 shadow-sm'
-                                                                    : 'bg-white border-stone-200 text-stone-400'
-                                                                    }`}
-                                                            >
-                                                                <CheckCircle className="w-4 h-4" />
-                                                                成形
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleStoolClick('UNFORMED')}
-                                                                className={`py-2 px-1 rounded-lg text-sm font-bold border flex flex-col items-center gap-1 transition-all ${stoolType === 'UNFORMED'
-                                                                    ? 'bg-orange-100 border-orange-300 text-orange-700 shadow-sm'
-                                                                    : 'bg-white border-stone-200 text-stone-400'
-                                                                    }`}
-                                                            >
-                                                                <HelpCircle className="w-4 h-4" />
-                                                                不成形
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleStoolClick('DIARRHEA')}
-                                                                className={`py-2 px-1 rounded-lg text-sm font-bold border flex flex-col items-center gap-1 transition-all ${stoolType === 'DIARRHEA'
-                                                                    ? 'bg-red-100 border-red-300 text-red-700 shadow-sm'
-                                                                    : 'bg-white border-stone-200 text-stone-400'
-                                                                    }`}
-                                                            >
-                                                                <AlertCircle className="w-4 h-4" />
-                                                                腹瀉
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Grooming */}
-                            <ActionButton
-                                id="grooming"
-                                label="梳毛"
-                                icon={CombIcon}
-                                active={actions.grooming}
-                                activeColorClass="bg-pink-50 border-pink-200"
-                                activeIconClass="text-pink-600"
-                            />
-
-                            {/* Medication */}
-                            <ActionButton
-                                id="medication"
-                                label="給藥"
-                                icon={Pill}
-                                active={actions.medication}
-                                activeColorClass="bg-cyan-50 border-cyan-200"
-                                activeIconClass="text-cyan-600"
-                            />
-
-                            {/* Bath */}
-                            <ActionButton
-                                id="bath"
-                                label="洗澡"
-                                icon={ShowerHead}
-                                active={actions.bath}
-                                activeColorClass="bg-blue-50 border-blue-200"
-                                activeIconClass="text-blue-500"
-                            />
-
-                            {/* Weight Recording */}
-                            <div className={`rounded-2xl transition-all duration-300 ${recordWeight ? 'bg-[#EA7500]/10 p-2 border border-[#EA7500]/30' : ''}`}>
-                                <button
-                                    type="button"
-                                    onClick={() => setRecordWeight(!recordWeight)}
-                                    className={`
-                                        w-full p-4 rounded-2xl flex items-center gap-4 border transition-all duration-200
-                                        ${recordWeight
-                                            ? 'bg-[#EA7500]/20 border-[#EA7500]/30 shadow-md border-transparent transform scale-[1.01]'
-                                            : 'border-stone-100 bg-white text-stone-400 hover:bg-stone-50'}
-                                    `}
-                                >
-                                    <div className={`p-3 rounded-full ${recordWeight ? 'bg-white/50' : 'bg-stone-100'}`}>
-                                        <Scale className={`w-6 h-6 ${recordWeight ? 'text-[#EA7500]' : 'text-stone-400'}`} />
-                                    </div>
-                                    <span className={`font-bold text-lg flex-1 text-left ${recordWeight ? 'text-stone-700' : ''}`}>紀錄體重</span>
-                                    <div className={`
-                                        w-6 h-6 rounded-full border-2 flex items-center justify-center
-                                        ${recordWeight ? 'border-stone-600 bg-stone-600' : 'border-stone-300'}
-                                    `}>
-                                        {recordWeight && <div className="w-2 h-2 bg-white rounded-full" />}
-                                    </div>
-                                </button>
-
-                                {recordWeight && (
-                                    <div className="mt-4 animate-fade-in px-2 pb-2">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <select
-                                                value={weightInt}
-                                                onChange={(e) => setWeightInt(Number(e.target.value))}
-                                                className="h-14 w-20 text-2xl font-bold text-center bg-white border-2 border-[#EA7500]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA7500]/50 text-[#EA7500] appearance-none"
-                                                style={{ textAlignLast: 'center' }}
-                                            >
-                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                                                    <option key={n} value={n}>{n}</option>
-                                                ))}
-                                            </select>
-                                            <span className="text-3xl font-bold text-[#EA7500]">.</span>
-                                            <select
-                                                value={weightDecimal}
-                                                onChange={(e) => setWeightDecimal(Number(e.target.value))}
-                                                className="h-14 w-20 text-2xl font-bold text-center bg-white border-2 border-[#EA7500]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA7500]/50 text-[#EA7500] appearance-none"
-                                                style={{ textAlignLast: 'center' }}
-                                            >
-                                                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                                                    <option key={n} value={n}>{n}</option>
-                                                ))}
-                                            </select>
-                                            <span className="text-lg font-medium text-stone-500 ml-1">公斤</span>
-                                        </div>
-                                    </div>
-                                )}
+                                            );
+                                        case 'grooming':
+                                            return (
+                                                <ActionButton
+                                                    key="grooming"
+                                                    id="grooming"
+                                                    label="梳毛"
+                                                    icon={CombIcon}
+                                                    active={actions.grooming}
+                                                    activeColorClass="bg-pink-50 border-pink-200"
+                                                    activeIconClass="text-pink-600"
+                                                />
+                                            );
+                                        case 'medication':
+                                            return (
+                                                <ActionButton
+                                                    key="medication"
+                                                    id="medication"
+                                                    label="給藥"
+                                                    icon={Pill}
+                                                    active={actions.medication}
+                                                    activeColorClass="bg-cyan-50 border-cyan-200"
+                                                    activeIconClass="text-cyan-600"
+                                                />
+                                            );
+                                        case 'bath':
+                                            return (
+                                                <ActionButton
+                                                    key="bath"
+                                                    id="bath"
+                                                    label="洗澡"
+                                                    icon={ShowerHead}
+                                                    active={actions.bath}
+                                                    activeColorClass="bg-blue-50 border-blue-200"
+                                                    activeIconClass="text-blue-500"
+                                                />
+                                            );
+                                        case 'weight':
+                                            return (
+                                                <div key="weight" className={`rounded-2xl transition-all duration-300 ${recordWeight ? 'bg-[#EA7500]/10 p-2 border border-[#EA7500]/30' : ''}`}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setRecordWeight(!recordWeight)}
+                                                        className={`
+                                                            w-full p-4 rounded-2xl flex items-center gap-4 border transition-all duration-200
+                                                            ${recordWeight
+                                                                ? 'bg-[#EA7500]/20 border-[#EA7500]/30 shadow-md border-transparent transform scale-[1.01]'
+                                                                : 'border-stone-100 bg-white text-stone-400 hover:bg-stone-50'}
+                                                        `}
+                                                    >
+                                                        <div className={`p-3 rounded-full ${recordWeight ? 'bg-white/50' : 'bg-stone-100'}`}>
+                                                            <Scale className={`w-6 h-6 ${recordWeight ? 'text-[#EA7500]' : 'text-stone-400'}`} />
+                                                        </div>
+                                                        <span className={`font-bold text-lg flex-1 text-left ${recordWeight ? 'text-stone-700' : ''}`}>紀錄體重</span>
+                                                        <div className={`
+                                                            w-6 h-6 rounded-full border-2 flex items-center justify-center
+                                                            ${recordWeight ? 'border-stone-600 bg-stone-600' : 'border-stone-300'}
+                                                        `}>
+                                                            {recordWeight && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
+                                                        </div>
+                                                    </button>
+                                                    {recordWeight && (
+                                                        <div className="mt-4 animate-fade-in px-1 pb-2">
+                                                            <div className="flex items-center justify-center gap-0">
+                                                                <select
+                                                                    value={weightInt}
+                                                                    onChange={(e) => setWeightInt(Number(e.target.value))}
+                                                                    className="h-14 w-20 text-2xl font-bold text-center bg-white border-2 border-[#EA7500]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA7500]/50 text-[#EA7500] appearance-none"
+                                                                    style={{ textAlignLast: 'center' }}
+                                                                >
+                                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(n => (
+                                                                        <option key={n} value={n}>{n}</option>
+                                                                    ))}
+                                                                </select>
+                                                                <span className="text-3xl font-bold text-[#EA7500] px-1">.</span>
+                                                                <select
+                                                                    value={weightDecimal}
+                                                                    onChange={(e) => setWeightDecimal(Number(e.target.value))}
+                                                                    className="h-14 w-20 text-2xl font-bold text-center bg-white border-2 border-[#EA7500]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA7500]/50 text-[#EA7500] appearance-none"
+                                                                    style={{ textAlignLast: 'center' }}
+                                                                >
+                                                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                                                                        <option key={n} value={n}>{n}</option>
+                                                                    ))}
+                                                                </select>
+                                                                <span className="text-lg font-medium text-stone-500 ml-1">公斤</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        default:
+                                            return null;
+                                    }
+                                })}
                             </div>
                         </section>
 

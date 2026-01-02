@@ -39,6 +39,7 @@ export interface PetProfile {
 export interface AppProfile {
   owners: Owner[];
   pet: PetProfile;
+  actionOrder?: string[]; // Order of action items: ['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight']
 }
 
 export interface CareLog {
