@@ -494,15 +494,16 @@ export const Home: React.FC = () => {
         {/* Right Column - Today's Tasks */}
         <div className="md:col-span-3">
           {/* Today's Status Section */}
-          <section className="bg-white md:rounded-2xl md:p-6 md:shadow-sm">
-            <div className="flex items-center mb-2 px-1 md:px-0">
+          <section>
+            <div className="flex items-center gap-2 mb-2 px-1 md:px-0">
+              <CalendarDays className="w-5 h-5 text-orange-500" />
               <h2 className="text-xl font-bold text-stone-800">今日任務</h2>
             </div>
             <div className="text-xs text-stone-400 mb-4 px-1 md:px-0">
               早 06:00-10:59 ｜ 中 11:00-16:59 ｜ 晚 17:00-22:59 ｜ 睡 23:00-05:59
             </div>
 
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-2 md:mb-0">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
               <StatusCard type="food" progress={status.food} />
               <StatusCard type="water" progress={status.water} />
               <StatusCard type="litter" progress={status.litter} />
