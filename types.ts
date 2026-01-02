@@ -50,6 +50,7 @@ export interface CareLog {
     litter: boolean;
     grooming?: boolean;
     medication?: boolean;
+    bath?: boolean;
   };
   stoolType?: StoolType;
   urineStatus?: UrineStatus;

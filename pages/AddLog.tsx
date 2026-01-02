@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale } from 'lucide-react';
+import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale, ShowerHead } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
 import { saveLog, getLog, updateLog, getLogs, getProfile } from '../services/storage';
 import { CareLog, StoolType, UrineStatus, Owner } from '../types';
@@ -33,6 +33,7 @@ export const AddLog: React.FC = () => {
         litter: false,
         grooming: false,
         medication: false,
+        bath: false,
     });
     const [stoolType, setStoolType] = useState<StoolType>(null);
     const [urineStatus, setUrineStatus] = useState<UrineStatus>(null);
@@ -485,6 +486,16 @@ export const AddLog: React.FC = () => {
                                 active={actions.medication}
                                 activeColorClass="bg-cyan-50 border-cyan-200"
                                 activeIconClass="text-cyan-600"
+                            />
+
+                            {/* Bath */}
+                            <ActionButton
+                                id="bath"
+                                label="洗澡"
+                                icon={ShowerHead}
+                                active={actions.bath}
+                                activeColorClass="bg-blue-50 border-blue-200"
+                                activeIconClass="text-blue-500"
                             />
 
                             {/* Weight Recording */}

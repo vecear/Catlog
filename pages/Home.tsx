@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
 import { getTodayStatus, getLogs, deleteLog, getProfile } from '../services/storage';
 import { CareLog, AppProfile, Owner } from '../types';
@@ -375,6 +375,18 @@ export const Home: React.FC = () => {
             </div>
           );
         })()}
+        {(() => {
+          const lastBathLog = logs.filter(l => l.actions.bath).sort((a, b) => b.timestamp - a.timestamp)[0];
+          if (lastBathLog) {
+            const daysSinceBath = Math.floor((Date.now() - lastBathLog.timestamp) / (1000 * 60 * 60 * 24));
+            return (
+              <div className="text-center text-xs text-stone-400 mt-1">
+                🚿 距離上次洗澡已經 <span className="font-bold text-blue-500">{daysSinceBath}</span> 天
+              </div>
+            );
+          }
+          return null;
+        })()}
         <div className="text-center text-xs text-stone-400 mt-1">
           {profile?.pet.name || '小賀'}想說: {catMessage}
         </div>
@@ -615,6 +627,7 @@ export const Home: React.FC = () => {
                               )}
                               {log.actions.grooming && <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-md text-xs font-medium">梳毛</span>}
                               {log.actions.medication && <span className="bg-cyan-100 text-cyan-700 px-2 py-1 rounded-md text-xs font-medium">給藥</span>}
+                              {log.actions.bath && <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"><ShowerHead className="w-3 h-3" />洗澡</span>}
                               {log.weight && (
                                 <span className="bg-[#EA7500]/10 text-[#EA7500] px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">
                                   <Scale className="w-3 h-3" />
