@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, Utensils, Droplets, Pill, Scale, ShowerHead } from 'lucide-react';
+import { CombIcon } from '../components/icons/CombIcon';
 import { clearAllLogs, getProfile, saveProfile, getLogs, saveLog } from '../services/storage';
 import { AppProfile, Owner, OWNER_COLORS } from '../types';
 
@@ -753,14 +754,14 @@ export const Settings: React.FC = () => {
 
         <div className="space-y-2">
           {(profile?.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight']).map((actionId) => {
-            const actionLabels: Record<string, { name: string; color: string }> = {
-              food: { name: '飼料', color: '#EAB308' },
-              water: { name: '飲水', color: '#921AFF' },
-              litter: { name: '貓砂', color: '#10B981' },
-              grooming: { name: '梳毛', color: '#EC4899' },
-              medication: { name: '給藥', color: '#06B6D4' },
-              bath: { name: '洗澡', color: '#3B82F6' },
-              weight: { name: '體重', color: '#EA7500' },
+            const actionLabels: Record<string, { name: string; color: string; icon: React.ElementType }> = {
+              food: { name: '飼料', color: '#EAB308', icon: Utensils },
+              water: { name: '飲水', color: '#921AFF', icon: Droplets },
+              litter: { name: '貓砂', color: '#10B981', icon: Trash2 },
+              grooming: { name: '梳毛', color: '#EC4899', icon: CombIcon },
+              medication: { name: '給藥', color: '#06B6D4', icon: Pill },
+              bath: { name: '洗澡', color: '#3B82F6', icon: ShowerHead },
+              weight: { name: '體重', color: '#EA7500', icon: Scale },
             };
             const action = actionLabels[actionId];
             if (!action) return null;
@@ -770,7 +771,7 @@ export const Settings: React.FC = () => {
               <div
                 key={actionId}
                 data-action-id={actionId}
-                className="flex items-center gap-3 p-3 rounded-xl border cursor-grab active:cursor-grabbing touch-none transition-all"
+                className="flex items-center gap-3 p-3 rounded-xl border transition-all"
                 style={{
                   backgroundColor: isDragging ? 'rgba(0,0,0,0.02)' : `${action.color}10`,
                   borderColor: isDragging ? 'transparent' : `${action.color}30`,
@@ -778,72 +779,76 @@ export const Settings: React.FC = () => {
                   borderStyle: isDragging ? 'dashed' : 'solid',
                   borderWidth: isDragging ? '2px' : '1px',
                 }}
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  setDraggingActionId(actionId);
+              >
+                <div
+                  className="text-stone-300 hover:text-stone-500 transition-colors cursor-grab active:cursor-grabbing touch-none p-2 -ml-2"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    setDraggingActionId(actionId);
 
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  actionDragOffsetRef.current = {
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top,
-                  };
-
-                  if (actionDragOverlayRef.current) {
-                    const x = e.clientX - actionDragOffsetRef.current.x;
-                    const y = e.clientY - actionDragOffsetRef.current.y;
-                    actionDragOverlayRef.current.style.transform = `translate(${x}px, ${y}px)`;
-                  }
-
-                  const handleActionMove = (moveE: PointerEvent) => {
-                    moveE.preventDefault();
+                    const row = e.currentTarget.closest('[data-action-id]');
+                    const rect = row?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
+                    actionDragOffsetRef.current = {
+                      x: e.clientX - rect.left,
+                      y: e.clientY - rect.top,
+                    };
 
                     if (actionDragOverlayRef.current) {
-                      const x = moveE.clientX - actionDragOffsetRef.current.x;
-                      const y = moveE.clientY - actionDragOffsetRef.current.y;
+                      const x = e.clientX - actionDragOffsetRef.current.x;
+                      const y = e.clientY - actionDragOffsetRef.current.y;
                       actionDragOverlayRef.current.style.transform = `translate(${x}px, ${y}px)`;
                     }
 
-                    const target = document.elementFromPoint(moveE.clientX, moveE.clientY);
-                    const row = target?.closest('[data-action-id]');
-                    if (row) {
-                      const targetId = row.getAttribute('data-action-id');
-                      if (targetId && targetId !== actionId) {
-                        setProfile(currentProfile => {
-                          if (!currentProfile) return null;
-                          const currentOrder = currentProfile.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight'];
-                          const currentIndex = currentOrder.indexOf(actionId);
-                          const targetIndex = currentOrder.indexOf(targetId);
-                          if (currentIndex === -1 || targetIndex === -1) return currentProfile;
-                          const newOrder = [...currentOrder];
-                          newOrder.splice(currentIndex, 1);
-                          newOrder.splice(targetIndex, 0, actionId);
-                          return { ...currentProfile, actionOrder: newOrder };
-                        });
-                      }
-                    }
-                  };
+                    const handleActionMove = (moveE: PointerEvent) => {
+                      moveE.preventDefault();
 
-                  const handleActionUp = () => {
-                    window.removeEventListener('pointermove', handleActionMove);
-                    window.removeEventListener('pointerup', handleActionUp);
-                    setDraggingActionId(null);
-                    setProfile(currentProfile => {
-                      if (currentProfile) {
-                        saveProfile(currentProfile);
+                      if (actionDragOverlayRef.current) {
+                        const x = moveE.clientX - actionDragOffsetRef.current.x;
+                        const y = moveE.clientY - actionDragOffsetRef.current.y;
+                        actionDragOverlayRef.current.style.transform = `translate(${x}px, ${y}px)`;
                       }
-                      return currentProfile;
-                    });
-                  };
 
-                  window.addEventListener('pointermove', handleActionMove);
-                  window.addEventListener('pointerup', handleActionUp);
-                }}
-              >
-                <GripVertical className="w-4 h-4 text-stone-300" />
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: action.color }}
-                />
+                      const target = document.elementFromPoint(moveE.clientX, moveE.clientY);
+                      const targetRow = target?.closest('[data-action-id]');
+                      if (targetRow) {
+                        const targetId = targetRow.getAttribute('data-action-id');
+                        if (targetId && targetId !== actionId) {
+                          setProfile(currentProfile => {
+                            if (!currentProfile) return null;
+                            const currentOrder = currentProfile.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight'];
+                            const currentIndex = currentOrder.indexOf(actionId);
+                            const targetIndex = currentOrder.indexOf(targetId);
+                            if (currentIndex === -1 || targetIndex === -1) return currentProfile;
+                            const newOrder = [...currentOrder];
+                            newOrder.splice(currentIndex, 1);
+                            newOrder.splice(targetIndex, 0, actionId);
+                            return { ...currentProfile, actionOrder: newOrder };
+                          });
+                        }
+                      }
+                    };
+
+                    const handleActionUp = () => {
+                      window.removeEventListener('pointermove', handleActionMove);
+                      window.removeEventListener('pointerup', handleActionUp);
+                      setDraggingActionId(null);
+                      setProfile(currentProfile => {
+                        if (currentProfile) {
+                          saveProfile(currentProfile);
+                        }
+                        return currentProfile;
+                      });
+                    };
+
+                    window.addEventListener('pointermove', handleActionMove);
+                    window.addEventListener('pointerup', handleActionUp);
+                  }}
+                >
+                  <GripVertical className="w-5 h-5" />
+                </div>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${action.color}20` }}>
+                  <action.icon className="w-4 h-4" style={{ color: action.color }} />
+                </div>
                 <span className="font-medium text-stone-700">{action.name}</span>
               </div>
             );
@@ -851,14 +856,14 @@ export const Settings: React.FC = () => {
 
           {/* Action Drag Overlay */}
           {draggingActionId && (() => {
-            const actionLabels: Record<string, { name: string; color: string }> = {
-              food: { name: '飼料', color: '#EAB308' },
-              water: { name: '飲水', color: '#921AFF' },
-              litter: { name: '貓砂', color: '#10B981' },
-              grooming: { name: '梳毛', color: '#EC4899' },
-              medication: { name: '給藥', color: '#06B6D4' },
-              bath: { name: '洗澡', color: '#3B82F6' },
-              weight: { name: '體重', color: '#EA7500' },
+            const actionLabels: Record<string, { name: string; color: string; icon: React.ElementType }> = {
+              food: { name: '飼料', color: '#EAB308', icon: Utensils },
+              water: { name: '飲水', color: '#921AFF', icon: Droplets },
+              litter: { name: '貓砂', color: '#10B981', icon: Trash2 },
+              grooming: { name: '梳毛', color: '#EC4899', icon: CombIcon },
+              medication: { name: '給藥', color: '#06B6D4', icon: Pill },
+              bath: { name: '洗澡', color: '#3B82F6', icon: ShowerHead },
+              weight: { name: '體重', color: '#EA7500', icon: Scale },
             };
             const action = actionLabels[draggingActionId];
             if (!action) return null;
@@ -873,10 +878,9 @@ export const Settings: React.FC = () => {
                 }}
               >
                 <GripVertical className="w-4 h-4 text-stone-400" />
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: action.color }}
-                />
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${action.color}20` }}>
+                  <action.icon className="w-4 h-4" style={{ color: action.color }} />
+                </div>
                 <span className="font-medium text-stone-700">{action.name}</span>
               </div>
             );

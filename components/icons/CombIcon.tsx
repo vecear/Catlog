@@ -1,10 +1,6 @@
 import React from 'react';
 
-interface CombIconProps {
-    className?: string;
-}
-
-export const CombIcon: React.FC<CombIconProps> = ({ className = "w-6 h-6" }) => (
+export const CombIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({ className = "w-6 h-6", ...props }) => (
     <svg
         className={className}
         viewBox="0 0 24 24"
@@ -13,6 +9,7 @@ export const CombIcon: React.FC<CombIconProps> = ({ className = "w-6 h-6" }) => 
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        {...props}
     >
         {/* Comb handle */}
         <rect x="3" y="4" width="18" height="4" rx="1" />
