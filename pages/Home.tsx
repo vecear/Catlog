@@ -160,18 +160,44 @@ export const Home: React.FC = () => {
     return profile?.owners.find(o => o.name === name);
   };
 
-  // Calculate scores for the last 7 days
-  const getScoreData = () => {
-    if (!profile) return { data: [], ownerScores: {} as Record<string, number> };
+  // Calculate scores for the current week (Monday 00:00 to Sunday 23:59)
+  const getWeeklyScores = () => {
+    if (!profile) return {} as Record<string, number>;
 
     const today = new Date();
-    const data = [];
     const ownerScores: Record<string, number> = {};
 
     // Initialize scores for all owners
     profile.owners.forEach(owner => {
       ownerScores[owner.name] = 0;
     });
+
+    // Calculate Monday of the current week
+    // getDay(): 0=Sunday, 1=Monday, ..., 6=Saturday
+    const dayOfWeek = today.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday goes back 6 days, others go to Monday
+    const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diffToMonday);
+    const mondayStart = monday.getTime();
+    const sundayEnd = mondayStart + 7 * 86400000; // Monday + 7 days
+
+    logs.forEach(log => {
+      if (log.timestamp >= mondayStart && log.timestamp < sundayEnd) {
+        const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
+        if (ownerScores[log.author] !== undefined) {
+          ownerScores[log.author] += points;
+        }
+      }
+    });
+
+    return ownerScores;
+  };
+
+  // Calculate chart data for the last 7 days
+  const getChartData = () => {
+    if (!profile) return [];
+
+    const today = new Date();
+    const data = [];
 
     // Create array for last 7 days (including today)
     for (let i = 6; i >= 0; i--) {
@@ -191,7 +217,6 @@ export const Home: React.FC = () => {
           const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
           if (dayScores[log.author] !== undefined) {
             dayScores[log.author] += points;
-            ownerScores[log.author] += points;
           }
         }
       });
@@ -202,10 +227,32 @@ export const Home: React.FC = () => {
       });
     }
 
-    return { data, ownerScores };
+    return data;
   };
 
-  const { data: chartData, ownerScores } = getScoreData();
+  const ownerScores = getWeeklyScores();
+  const chartData = getChartData();
+
+  // Get current week date range string with week number
+  const getWeekRange = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const mondayStr = monday.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
+    const sundayStr = sunday.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
+
+    // Calculate ISO week number (week starts on Monday)
+    const thursdayOfWeek = new Date(monday);
+    thursdayOfWeek.setDate(monday.getDate() + 3); // Thursday of the current week
+    const yearStart = new Date(thursdayOfWeek.getFullYear(), 0, 1);
+    const weekNumber = Math.ceil((((thursdayOfWeek.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+
+    return `年度第${weekNumber}週, ${mondayStr} - ${sundayStr}`;
+  };
+  const weekRange = getWeekRange();
 
   // Find winner
   const getWinner = () => {
@@ -345,7 +392,7 @@ export const Home: React.FC = () => {
               <>本週{profile?.pet.name || '小賀'}更愛 <span style={{ color: getOwnerByName(winnerInfo.name)?.color }} className="text-xl">{winnerInfo.name}</span></>
             ) : null}
           </h3>
-          <p className="text-center text-xs text-stone-400 mb-2">本週給{profile?.pet.name || '小賀'}的愛</p>
+          <p className="text-center text-xs text-stone-400 mb-2">本週給{profile?.pet.name || '小賀'}的愛 ({weekRange})</p>
           <div className="flex justify-center gap-4 items-center text-sm font-medium mb-2 flex-wrap">
             {profile?.owners.map((owner, index) => {
               const score = ownerScores[owner.name] || 0;
@@ -364,7 +411,7 @@ export const Home: React.FC = () => {
               );
             })}
           </div>
-          <p className="text-center text-xs text-stone-400 mb-1">累積總分</p>
+          <p className="text-center text-xs text-stone-400 mb-1">全部累積總分</p>
           <div className="text-center text-xs text-stone-400 mb-4">
             {profile?.owners.map((owner, index) => (
               <span key={owner.id}>
@@ -375,6 +422,7 @@ export const Home: React.FC = () => {
             ))}
           </div>
 
+          <p className="text-center text-xs text-stone-400 mb-1">過去7天</p>
           <div className="h-[72px] w-full mb-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
