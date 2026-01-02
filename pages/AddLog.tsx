@@ -127,7 +127,7 @@ export const AddLog: React.FC = () => {
         const timestamp = new Date(`${date}T${time}`).getTime();
 
         // Validate that at least one action is selected OR weight is being recorded
-        const hasAnyAction = actions.food || actions.water || actions.litter || actions.grooming || actions.medication;
+        const hasAnyAction = actions.food || actions.water || actions.litter || actions.grooming || actions.medication || actions.bath;
         if (!hasAnyAction && !recordWeight) {
             alert("請至少選擇一個項目！");
             return;
