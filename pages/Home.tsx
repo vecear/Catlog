@@ -387,9 +387,17 @@ export const Home: React.FC = () => {
           }
           return null;
         })()}
-        <div className="text-center text-xs text-stone-400 mt-1">
-          {profile?.pet.name || '小賀'}想說: {catMessage}
-        </div>
+        {(() => {
+          const latestWeightLog = logs.filter(l => l.weight).sort((a, b) => b.timestamp - a.timestamp)[0];
+          if (latestWeightLog?.weight) {
+            return (
+              <div className="text-center text-xs text-stone-400 mt-1">
+                ⚖️ 目前體重 <span className="font-bold text-[#EA7500]">{latestWeightLog.weight.toFixed(1)}</span> 公斤
+              </div>
+            );
+          }
+          return null;
+        })()}
       </header>
 
       {/* Desktop: Two Column Layout / Mobile: Stack */}
