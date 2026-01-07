@@ -589,8 +589,8 @@ export const Home: React.FC = () => {
 
       {/* Monthly Logs Section */}
       <section>
-        <div className="flex items-center justify-between mb-4 px-1">
-          <div className="flex items-center gap-2">
+        <div className="mb-4 px-1">
+          <div className="flex items-center gap-2 mb-2">
             <CalendarDays className="w-5 h-5 text-stone-400" />
             <h2 className="text-lg font-bold text-stone-700">月份紀錄</h2>
             <button
