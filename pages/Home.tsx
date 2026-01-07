@@ -283,7 +283,7 @@ export const Home: React.FC = () => {
   };
   const allTimeTotals = getAllTimeTotals();
 
-  // Get weight data for chart
+  // Get weight data for chart - only show days with actual weight records
   const getWeightChartData = () => {
     const weightLogs = logs
       .filter(log => log.weight)
@@ -291,37 +291,29 @@ export const Home: React.FC = () => {
 
     if (weightLogs.length === 0) return [];
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Group logs by date and take the latest weight for each day
+    const weightByDate = new Map<string, { date: string; weight: number; timestamp: number }>();
 
-    // Calculate the start date window (13 days ago + today = 14 days)
-    const windowStartDate = new Date(today);
-    windowStartDate.setDate(today.getDate() - 13);
+    weightLogs.forEach(log => {
+      const logDate = new Date(log.timestamp);
+      const dateKey = `${logDate.getFullYear()}-${logDate.getMonth()}-${logDate.getDate()}`;
+      const dateStr = logDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
 
-    // Determine the actual start date: max(windowStartDate, firstLogDate)
-    const firstLogTime = new Date(weightLogs[0].timestamp);
-    const firstLogDate = new Date(firstLogTime.getFullYear(), firstLogTime.getMonth(), firstLogTime.getDate());
-
-    let currentDate = new Date(firstLogDate > windowStartDate ? firstLogDate : windowStartDate);
-    const data = [];
-
-    while (currentDate <= today) {
-      const dayEnd = currentDate.getTime() + 86400000;
-      // Find the latest weight recording before the end of this day
-      // This implements "carry forward" logic implicitly by finding the last known weight up to this point
-      const relevantLog = weightLogs.filter(l => l.timestamp < dayEnd).pop();
-
-      if (relevantLog && relevantLog.weight) {
-        data.push({
-          date: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' }),
-          weight: relevantLog.weight
+      // Keep the latest weight record for each day
+      const existing = weightByDate.get(dateKey);
+      if (!existing || log.timestamp > existing.timestamp) {
+        weightByDate.set(dateKey, {
+          date: dateStr,
+          weight: log.weight!,
+          timestamp: log.timestamp
         });
       }
+    });
 
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return data;
+    // Convert to array and sort by timestamp
+    return Array.from(weightByDate.values())
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(({ date, weight }) => ({ date, weight }));
   };
   const weightChartData = getWeightChartData();
   const hasWeightData = weightChartData.length > 0;
@@ -590,7 +582,7 @@ export const Home: React.FC = () => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-center text-xs text-stone-400 mt-2">過去14天</p>
+            <p className="text-center text-xs text-stone-400 mt-2">歷史紀錄</p>
           </div>
         </section>
       )}
