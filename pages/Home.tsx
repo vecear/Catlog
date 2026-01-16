@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead } from 'lucide-react';
+import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
 import { getTodayStatus, getLogs, deleteLog, getProfile } from '../services/storage';
 import { CareLog, AppProfile, Owner } from '../types';
@@ -410,6 +410,18 @@ export const Home: React.FC = () => {
           return null;
         })()}
         {(() => {
+          const lastDewormingLog = logs.filter(l => l.actions.deworming).sort((a, b) => b.timestamp - a.timestamp)[0];
+          if (lastDewormingLog) {
+            const daysSinceDeworming = Math.floor((Date.now() - lastDewormingLog.timestamp) / (1000 * 60 * 60 * 24));
+            return (
+              <div className="text-center text-xs text-stone-400 mt-1">
+                🪱 距離上次驅蟲已經 <span className="font-bold text-red-500">{daysSinceDeworming}</span> 天
+              </div>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
           const latestWeightLog = logs.filter(l => l.weight).sort((a, b) => b.timestamp - a.timestamp)[0];
           if (latestWeightLog?.weight) {
             return (
@@ -508,7 +520,7 @@ export const Home: React.FC = () => {
               </div>
 
               <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
-                (梳毛 +3, 飼料/水/給藥/體重 +2, 貓砂:乾淨+1/髒+4)
+                (梳毛 +3, 飼料/水/給藥/體重 +2, 貓砂:乾淨+1/髒+4, 驅蟲不計分)
               </div>
             </div>
           </section>
@@ -708,6 +720,7 @@ export const Home: React.FC = () => {
                               )}
                               {log.actions.grooming && <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-md text-xs font-medium">梳毛</span>}
                               {log.actions.medication && <span className="bg-cyan-100 text-cyan-700 px-2 py-1 rounded-md text-xs font-medium">給藥</span>}
+                              {log.actions.deworming && <span className="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"><Bug className="w-3 h-3" />驅蟲</span>}
                               {log.actions.bath && <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"><ShowerHead className="w-3 h-3" />洗澡</span>}
                               {log.weight && (
                                 <span className="bg-[#EA7500]/10 text-[#EA7500] px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">

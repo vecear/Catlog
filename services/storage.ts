@@ -25,7 +25,20 @@ export const getProfile = async (): Promise<AppProfile> => {
     const docRef = doc(db, PROFILE_COLLECTION_NAME, PROFILE_DOC_ID);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return docSnap.data() as AppProfile;
+      const data = docSnap.data() as AppProfile;
+      // Migration: Ensure 'deworming' is in actionOrder if it's missing
+      if (data.actionOrder && !data.actionOrder.includes('deworming')) {
+        const newOrder = [...data.actionOrder];
+        // Insert before 'bath' or at the end
+        const bathIndex = newOrder.indexOf('bath');
+        if (bathIndex !== -1) {
+          newOrder.splice(bathIndex, 0, 'deworming');
+        } else {
+          newOrder.push('deworming');
+        }
+        data.actionOrder = newOrder;
+      }
+      return data;
     }
     // Return default if not exists
     return DEFAULT_PROFILE;

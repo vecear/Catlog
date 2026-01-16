@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, Utensils, Droplets, Pill, Scale, ShowerHead } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, Utensils, Droplets, Pill, Scale, ShowerHead, Bug } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
 import { clearAllLogs, getProfile, saveProfile, getLogs, saveLog } from '../services/storage';
 import { AppProfile, Owner, OWNER_COLORS } from '../types';
@@ -753,13 +753,14 @@ export const Settings: React.FC = () => {
         <p className="text-stone-400 text-sm mb-4">拖拉調整新增紀錄中項目的顯示順序</p>
 
         <div className="space-y-2">
-          {(profile?.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight']).map((actionId) => {
+          {(profile?.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'deworming', 'bath', 'weight']).map((actionId) => {
             const actionLabels: Record<string, { name: string; color: string; icon: React.ElementType }> = {
               food: { name: '飼料', color: '#EAB308', icon: Utensils },
               water: { name: '飲水', color: '#921AFF', icon: Droplets },
               litter: { name: '貓砂', color: '#10B981', icon: Trash2 },
               grooming: { name: '梳毛', color: '#EC4899', icon: CombIcon },
               medication: { name: '給藥', color: '#06B6D4', icon: Pill },
+              deworming: { name: '驅蟲', color: '#EF4444', icon: Bug },
               bath: { name: '洗澡', color: '#3B82F6', icon: ShowerHead },
               weight: { name: '體重', color: '#EA7500', icon: Scale },
             };
@@ -815,7 +816,7 @@ export const Settings: React.FC = () => {
                         if (targetId && targetId !== actionId) {
                           setProfile(currentProfile => {
                             if (!currentProfile) return null;
-                            const currentOrder = currentProfile.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight'];
+                            const currentOrder = currentProfile.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'deworming', 'bath', 'weight'];
                             const currentIndex = currentOrder.indexOf(actionId);
                             const targetIndex = currentOrder.indexOf(targetId);
                             if (currentIndex === -1 || targetIndex === -1) return currentProfile;
@@ -862,6 +863,7 @@ export const Settings: React.FC = () => {
               litter: { name: '貓砂', color: '#10B981', icon: Trash2 },
               grooming: { name: '梳毛', color: '#EC4899', icon: CombIcon },
               medication: { name: '給藥', color: '#06B6D4', icon: Pill },
+              deworming: { name: '驅蟲', color: '#EF4444', icon: Bug },
               bath: { name: '洗澡', color: '#3B82F6', icon: ShowerHead },
               weight: { name: '體重', color: '#EA7500', icon: Scale },
             };

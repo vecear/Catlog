@@ -4,44 +4,49 @@
 
 # 小賀log (Catlog)
 
-This project contains everything you need to run your app locally.
+這是一個用來記錄「小賀」生活點滴的 Web 應用程式。
 
-View your app in AI Studio: https://ai.studio/apps/drive/1LrqIIEYf7t-lk6OjUMIeI-lUmM7BtwMb
+## 專案功能
+- 錄入照護日誌（飲食、飲水、貓砂、梳理、給藥）
+- 體重追蹤
+- 隨機小賀稱號生成
+- 支援多位照護者 (RURU, CCL)
 
-## Run Locally
+## 技術棧
+- **Frontend**: React 19 + Vite + TypeScript + TailwindCSS
+- **Backend**: Firebase Firestore (雲端資料同步)
+- **AI**: Google Gemini API (處理特定邏輯)
 
-**Prerequisites:**  Node.js (v20 recommended)
+## 本地開發
 
-1. **Install dependencies:**
+**前置需求:** Node.js (建議 v20+)
+
+1. **安裝依賴:**
    ```bash
    npm install
    ```
 
-2. **Environment Setup:**
-   - Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key.
+2. **環境變數設定:**
+   - 複製 `.env.example` (如果有的話) 或直接建立 `.env.local`。
+   - 確保 `.env.local` 包含正確的 Firebase 與 Gemini API 設定。
 
-3. **Start the Development Server:**
+3. **啟動開發伺服器:**
    ```bash
    npm run dev
    ```
+   伺服器預設運行在 [http://localhost:3000/Catlog/](http://localhost:3000/Catlog/)。
 
-## Build & Deployment
+## 部署與自動化
 
-### Build Locally
-To build the application for production:
-```bash
-npm run build
-```
-The output will be in the `dist` directory.
+### 部署到 GitHub Pages
+本專案已配置 GitHub Actions。
+1. 將變更推送到 `main` 分支。
+2. `.github/workflows/deploy.yml` 會自動構建並部署。
+3. 請確保在 Repository 設定中將 Pages Source 設定為 `gh-pages` 分支。
 
-### GitHub Actions Deployment
-This project is configured with GitHub Actions to automatically deploy to **GitHub Pages**.
-
-1. Push changes to the `main` branch.
-2. The workflow in `.github/workflows/deploy.yml` will automatically build and deploy the app.
-3. Ensure you have enabled GitHub Pages in your repository settings (Settings -> Pages -> Source: `gh-pages` branch).
-
-## Project Structure
-- `src/`: Source code
-- `public/`: Static assets
-- `.github/workflows/`: CI/CD configurations
+## 專案結構
+- `src/`: 核心源碼
+- `services/`: Firebase 與 Gemini API 介面
+- `pages/`: 頁面元件 (首頁、新增日誌、設定)
+- `components/`: 通用元件
+- `types.ts`: TypeScript 定義
