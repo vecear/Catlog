@@ -373,9 +373,11 @@ export const Home: React.FC = () => {
             <SettingsIcon className="w-6 h-6" />
           </button>
         </div>
-        <div className="text-center text-xs text-stone-400 mt-2">
-          {new Date().toLocaleString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' })}
-        </div>
+      </header>
+
+      {/* Pet Stats Highlights Card */}
+      <section className="bg-white p-4 rounded-2xl shadow-sm border border-stone-100 flex grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Birthday Stat */}
         {profile?.pet.birthday && (() => {
           const today = new Date();
           const [birthYear, birthMonth, birthDay] = profile.pet.birthday.split('-').map(Number);
@@ -387,52 +389,81 @@ export const Home: React.FC = () => {
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
           const nextAge = nextBirthday.getFullYear() - birthYear;
           const isBirthdayToday = today.getMonth() === birthMonth - 1 && today.getDate() === birthDay;
+
           return (
-            <div className="text-center text-xs mt-1">
-              {isBirthdayToday ? (
-                <span className="text-orange-500 font-bold">🎂 今天是 {profile.pet.name} 的 {nextAge} 歲生日！🎉</span>
-              ) : (
-                <span className="text-stone-400">🎂 距離 {nextAge} 歲生日還有 <span className="font-bold text-orange-500">{diffDays}</span> 天</span>
-              )}
+            <div className="bg-orange-50/50 p-3 rounded-xl flex flex-col items-center justify-center text-center">
+              <span className="text-lg mb-1">🎂</span>
+              <span className="text-[10px] text-stone-400 font-medium">生日倒數</span>
+              <div className="text-sm font-bold text-stone-700">
+                {isBirthdayToday ? (
+                  <span className="text-orange-500 animate-pulse">{nextAge} 歲生日！</span>
+                ) : (
+                  <><span className="text-orange-500">{diffDays}</span> 天</>
+                )}
+              </div>
             </div>
           );
         })()}
+
+        {/* Bath Stat */}
         {(() => {
           const lastBathLog = logs.filter(l => l.actions.bath).sort((a, b) => b.timestamp - a.timestamp)[0];
-          if (lastBathLog) {
-            const daysSinceBath = Math.floor((Date.now() - lastBathLog.timestamp) / (1000 * 60 * 60 * 24));
-            return (
-              <div className="text-center text-xs text-stone-400 mt-1">
-                🚿 距離上次洗澡已經 <span className="font-bold text-blue-500">{daysSinceBath}</span> 天
+          const daysSinceBath = lastBathLog ? Math.floor((Date.now() - lastBathLog.timestamp) / (1000 * 60 * 60 * 24)) : null;
+
+          return (
+            <div className="bg-blue-50/50 p-3 rounded-xl flex flex-col items-center justify-center text-center">
+              <span className="text-lg mb-1">🚿</span>
+              <span className="text-[10px] text-stone-400 font-medium">上次洗澡</span>
+              <div className="text-sm font-bold text-stone-700">
+                {daysSinceBath !== null ? (
+                  <><span className="text-blue-500">{daysSinceBath}</span> 天前</>
+                ) : (
+                  <span className="text-stone-300">無紀錄</span>
+                )}
               </div>
-            );
-          }
-          return null;
+            </div>
+          );
         })()}
+
+        {/* Deworming Stat */}
         {(() => {
           const lastDewormingLog = logs.filter(l => l.actions.deworming).sort((a, b) => b.timestamp - a.timestamp)[0];
-          if (lastDewormingLog) {
-            const daysSinceDeworming = Math.floor((Date.now() - lastDewormingLog.timestamp) / (1000 * 60 * 60 * 24));
-            return (
-              <div className="text-center text-xs text-stone-400 mt-1">
-                🪱 距離上次驅蟲已經 <span className="font-bold text-red-500">{daysSinceDeworming}</span> 天
+          const daysSinceDeworming = lastDewormingLog ? Math.floor((Date.now() - lastDewormingLog.timestamp) / (1000 * 60 * 60 * 24)) : null;
+
+          return (
+            <div className="bg-red-50/50 p-3 rounded-xl flex flex-col items-center justify-center text-center">
+              <span className="text-lg mb-1">🪱</span>
+              <span className="text-[10px] text-stone-400 font-medium">上次驅蟲</span>
+              <div className="text-sm font-bold text-stone-700">
+                {daysSinceDeworming !== null ? (
+                  <><span className="text-red-500">{daysSinceDeworming}</span> 天前</>
+                ) : (
+                  <span className="text-stone-300">無紀錄</span>
+                )}
               </div>
-            );
-          }
-          return null;
+            </div>
+          );
         })()}
+
+        {/* Weight Stat */}
         {(() => {
           const latestWeightLog = logs.filter(l => l.weight).sort((a, b) => b.timestamp - a.timestamp)[0];
-          if (latestWeightLog?.weight) {
-            return (
-              <div className="text-center text-xs text-stone-400 mt-1">
-                ⚖️ 目前體重 <span className="font-bold text-[#EA7500]">{latestWeightLog.weight.toFixed(1)}</span> 公斤
+
+          return (
+            <div className="bg-amber-50/50 p-3 rounded-xl flex flex-col items-center justify-center text-center">
+              <span className="text-lg mb-1">⚖️</span>
+              <span className="text-[10px] text-stone-400 font-medium">目前體重</span>
+              <div className="text-sm font-bold text-stone-700">
+                {latestWeightLog?.weight ? (
+                  <><span className="text-[#EA7500]">{latestWeightLog.weight.toFixed(1)}</span> kg</>
+                ) : (
+                  <span className="text-stone-300">無紀錄</span>
+                )}
               </div>
-            );
-          }
-          return null;
+            </div>
+          );
         })()}
-      </header>
+      </section>
 
       {/* Desktop: Two Column Layout / Mobile: Stack */}
       <div className="md:grid md:grid-cols-5 md:gap-6">
