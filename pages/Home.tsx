@@ -376,7 +376,7 @@ export const Home: React.FC = () => {
       </header>
 
       {/* Pet Stats Highlights Card */}
-      <section className="bg-white p-4 rounded-2xl shadow-sm border border-stone-100 flex grid grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="bg-white p-4 rounded-2xl shadow-sm border border-stone-100 grid grid-cols-4 gap-2">
         {/* Birthday Stat */}
         {profile?.pet.birthday && (() => {
           const today = new Date();
@@ -391,10 +391,10 @@ export const Home: React.FC = () => {
           const isBirthdayToday = today.getMonth() === birthMonth - 1 && today.getDate() === birthDay;
 
           return (
-            <div className="bg-orange-50/50 p-3 rounded-xl flex flex-col items-center justify-center text-center">
-              <span className="text-lg mb-1">🎂</span>
-              <span className="text-[10px] text-stone-400 font-medium">生日倒數</span>
-              <div className="text-sm font-bold text-stone-700">
+            <div className="bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+              <span className="text-base mb-1">🎂</span>
+              <span className="text-[10px] text-stone-400 font-medium truncate w-full">生日倒數</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
                 {isBirthdayToday ? (
                   <span className="text-orange-500 animate-pulse">{nextAge} 歲生日！</span>
                 ) : (
@@ -411,10 +411,10 @@ export const Home: React.FC = () => {
           const daysSinceBath = lastBathLog ? Math.floor((Date.now() - lastBathLog.timestamp) / (1000 * 60 * 60 * 24)) : null;
 
           return (
-            <div className="bg-blue-50/50 p-3 rounded-xl flex flex-col items-center justify-center text-center">
-              <span className="text-lg mb-1">🚿</span>
-              <span className="text-[10px] text-stone-400 font-medium">上次洗澡</span>
-              <div className="text-sm font-bold text-stone-700">
+            <div className="bg-blue-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+              <span className="text-base mb-1">🚿</span>
+              <span className="text-[10px] text-stone-400 font-medium truncate w-full">上次洗澡</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
                 {daysSinceBath !== null ? (
                   <><span className="text-blue-500">{daysSinceBath}</span> 天前</>
                 ) : (
@@ -431,10 +431,10 @@ export const Home: React.FC = () => {
           const daysSinceDeworming = lastDewormingLog ? Math.floor((Date.now() - lastDewormingLog.timestamp) / (1000 * 60 * 60 * 24)) : null;
 
           return (
-            <div className="bg-red-50/50 p-3 rounded-xl flex flex-col items-center justify-center text-center">
-              <span className="text-lg mb-1">🪱</span>
-              <span className="text-[10px] text-stone-400 font-medium">上次驅蟲</span>
-              <div className="text-sm font-bold text-stone-700">
+            <div className="bg-red-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+              <span className="text-base mb-1">🦠</span>
+              <span className="text-[10px] text-stone-400 font-medium truncate w-full">上次驅蟲</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
                 {daysSinceDeworming !== null ? (
                   <><span className="text-red-500">{daysSinceDeworming}</span> 天前</>
                 ) : (
@@ -450,10 +450,10 @@ export const Home: React.FC = () => {
           const latestWeightLog = logs.filter(l => l.weight).sort((a, b) => b.timestamp - a.timestamp)[0];
 
           return (
-            <div className="bg-amber-50/50 p-3 rounded-xl flex flex-col items-center justify-center text-center">
-              <span className="text-lg mb-1">⚖️</span>
-              <span className="text-[10px] text-stone-400 font-medium">目前體重</span>
-              <div className="text-sm font-bold text-stone-700">
+            <div className="bg-amber-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+              <span className="text-base mb-1">⚖️</span>
+              <span className="text-[10px] text-stone-400 font-medium truncate w-full">目前體重</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
                 {latestWeightLog?.weight ? (
                   <><span className="text-[#EA7500]">{latestWeightLog.weight.toFixed(1)}</span> kg</>
                 ) : (
