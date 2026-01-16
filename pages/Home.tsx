@@ -393,7 +393,9 @@ export const Home: React.FC = () => {
           return (
             <div className="bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
               <span className="text-base mb-1">🎂</span>
-              <span className="text-[10px] text-stone-400 font-medium truncate w-full">生日倒數</span>
+              <span className="text-[10px] text-stone-400 font-medium truncate w-full">
+                <span className="text-red-500">{nextAge}歲</span>倒數
+              </span>
               <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
                 {isBirthdayToday ? (
                   <span className="text-orange-500 animate-pulse">{nextAge} 歲生日！</span>
