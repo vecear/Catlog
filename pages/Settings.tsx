@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, Utensils, Droplets, Pill, Scale, ShowerHead } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, Utensils, Droplets, Pill, Scale, ShowerHead, LogOut } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
 import { clearAllLogs, getProfile, saveProfile, getLogs, saveLog } from '../services/storage';
+import { logout } from '../services/auth';
 import { AppProfile, Owner, OWNER_COLORS } from '../types';
 
 export const Settings: React.FC = () => {
@@ -381,14 +382,28 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in-up max-w-2xl mx-auto">
-      <div className="flex items-center gap-4 mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6 text-stone-700" />
+          </button>
+          <h2 className="text-2xl font-bold text-stone-800">設定</h2>
+        </div>
         <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors"
+          onClick={async () => {
+            if (window.confirm('確定要登出嗎？')) {
+              await logout();
+              navigate('/login');
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-600 rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors"
         >
-          <ArrowLeft className="w-6 h-6 text-stone-700" />
+          <LogOut className="w-4 h-4" />
+          <span className="font-bold text-sm">登出</span>
         </button>
-        <h2 className="text-2xl font-bold text-stone-800">設定</h2>
       </div>
 
       {/* Pet Profile Section */}
