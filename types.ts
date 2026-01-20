@@ -39,7 +39,7 @@ export interface PetProfile {
 export interface AppProfile {
   owners: Owner[];
   pet: PetProfile;
-  actionOrder?: string[]; // Order of action items: ['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight']
+  actionOrder?: string[]; // Order of action items: ['food', 'water', 'litter', 'grooming', 'medication', 'deworming', 'bath', 'weight']
 }
 
 export interface CareLog {
@@ -51,6 +51,7 @@ export interface CareLog {
     litter: boolean;
     grooming?: boolean;
     medication?: boolean;
+    deworming?: boolean;
     bath?: boolean;
   };
   stoolType?: StoolType;

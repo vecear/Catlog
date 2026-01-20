@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead } from 'lucide-react';
+import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
 import { getTodayStatus, getLogs, deleteLog, getProfile } from '../services/storage';
 import { CareLog, AppProfile, Owner } from '../types';
@@ -283,7 +283,7 @@ export const Home: React.FC = () => {
   };
   const allTimeTotals = getAllTimeTotals();
 
-  // Get weight data for chart
+  // Get weight data for chart - only show days with actual weight records
   const getWeightChartData = () => {
     const weightLogs = logs
       .filter(log => log.weight)
@@ -291,37 +291,29 @@ export const Home: React.FC = () => {
 
     if (weightLogs.length === 0) return [];
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Group logs by date and take the latest weight for each day
+    const weightByDate = new Map<string, { date: string; weight: number; timestamp: number }>();
 
-    // Calculate the start date window (13 days ago + today = 14 days)
-    const windowStartDate = new Date(today);
-    windowStartDate.setDate(today.getDate() - 13);
+    weightLogs.forEach(log => {
+      const logDate = new Date(log.timestamp);
+      const dateKey = `${logDate.getFullYear()}-${logDate.getMonth()}-${logDate.getDate()}`;
+      const dateStr = logDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
 
-    // Determine the actual start date: max(windowStartDate, firstLogDate)
-    const firstLogTime = new Date(weightLogs[0].timestamp);
-    const firstLogDate = new Date(firstLogTime.getFullYear(), firstLogTime.getMonth(), firstLogTime.getDate());
-
-    let currentDate = new Date(firstLogDate > windowStartDate ? firstLogDate : windowStartDate);
-    const data = [];
-
-    while (currentDate <= today) {
-      const dayEnd = currentDate.getTime() + 86400000;
-      // Find the latest weight recording before the end of this day
-      // This implements "carry forward" logic implicitly by finding the last known weight up to this point
-      const relevantLog = weightLogs.filter(l => l.timestamp < dayEnd).pop();
-
-      if (relevantLog && relevantLog.weight) {
-        data.push({
-          date: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' }),
-          weight: relevantLog.weight
+      // Keep the latest weight record for each day
+      const existing = weightByDate.get(dateKey);
+      if (!existing || log.timestamp > existing.timestamp) {
+        weightByDate.set(dateKey, {
+          date: dateStr,
+          weight: log.weight!,
+          timestamp: log.timestamp
         });
       }
+    });
 
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return data;
+    // Convert to array and sort by timestamp
+    return Array.from(weightByDate.values())
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(({ date, weight }) => ({ date, weight }));
   };
   const weightChartData = getWeightChartData();
   const hasWeightData = weightChartData.length > 0;
@@ -381,9 +373,11 @@ export const Home: React.FC = () => {
             <SettingsIcon className="w-6 h-6" />
           </button>
         </div>
-        <div className="text-center text-xs text-stone-400 mt-2">
-          {new Date().toLocaleString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' })}
-        </div>
+      </header>
+
+      {/* Pet Stats Highlights Card */}
+      <section className="bg-white p-4 rounded-2xl shadow-sm border border-stone-100 grid grid-cols-4 gap-2">
+        {/* Birthday Stat */}
         {profile?.pet.birthday && (() => {
           const today = new Date();
           const [birthYear, birthMonth, birthDay] = profile.pet.birthday.split('-').map(Number);
@@ -395,40 +389,83 @@ export const Home: React.FC = () => {
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
           const nextAge = nextBirthday.getFullYear() - birthYear;
           const isBirthdayToday = today.getMonth() === birthMonth - 1 && today.getDate() === birthDay;
+
           return (
-            <div className="text-center text-xs mt-1">
-              {isBirthdayToday ? (
-                <span className="text-orange-500 font-bold">🎂 今天是 {profile.pet.name} 的 {nextAge} 歲生日！🎉</span>
-              ) : (
-                <span className="text-stone-400">🎂 距離 {nextAge} 歲生日還有 <span className="font-bold text-orange-500">{diffDays}</span> 天</span>
-              )}
+            <div className="bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+              <span className="text-base mb-1">🎂</span>
+              <span className="text-[10px] text-stone-400 font-medium truncate w-full">
+                <span className="text-red-500">{nextAge}歲</span>倒數
+              </span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
+                {isBirthdayToday ? (
+                  <span className="text-orange-500 animate-pulse">{nextAge} 歲生日！</span>
+                ) : (
+                  <><span className="text-orange-500">{diffDays}</span> 天</>
+                )}
+              </div>
             </div>
           );
         })()}
+
+        {/* Bath Stat */}
         {(() => {
           const lastBathLog = logs.filter(l => l.actions.bath).sort((a, b) => b.timestamp - a.timestamp)[0];
-          if (lastBathLog) {
-            const daysSinceBath = Math.floor((Date.now() - lastBathLog.timestamp) / (1000 * 60 * 60 * 24));
-            return (
-              <div className="text-center text-xs text-stone-400 mt-1">
-                🚿 距離上次洗澡已經 <span className="font-bold text-blue-500">{daysSinceBath}</span> 天
+          const daysSinceBath = lastBathLog ? Math.floor((Date.now() - lastBathLog.timestamp) / (1000 * 60 * 60 * 24)) : null;
+
+          return (
+            <div className="bg-blue-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+              <span className="text-base mb-1">🚿</span>
+              <span className="text-[10px] text-stone-400 font-medium truncate w-full">上次洗澡</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
+                {daysSinceBath !== null ? (
+                  <><span className="text-blue-500">{daysSinceBath}</span> 天前</>
+                ) : (
+                  <span className="text-stone-300">無紀錄</span>
+                )}
               </div>
-            );
-          }
-          return null;
+            </div>
+          );
         })()}
+
+        {/* Deworming Stat */}
+        {(() => {
+          const lastDewormingLog = logs.filter(l => l.actions.deworming).sort((a, b) => b.timestamp - a.timestamp)[0];
+          const daysSinceDeworming = lastDewormingLog ? Math.floor((Date.now() - lastDewormingLog.timestamp) / (1000 * 60 * 60 * 24)) : null;
+
+          return (
+            <div className="bg-red-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+              <span className="text-base mb-1">🦠</span>
+              <span className="text-[10px] text-stone-400 font-medium truncate w-full">上次驅蟲</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
+                {daysSinceDeworming !== null ? (
+                  <><span className="text-red-500">{daysSinceDeworming}</span> 天前</>
+                ) : (
+                  <span className="text-stone-300">無紀錄</span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Weight Stat */}
         {(() => {
           const latestWeightLog = logs.filter(l => l.weight).sort((a, b) => b.timestamp - a.timestamp)[0];
-          if (latestWeightLog?.weight) {
-            return (
-              <div className="text-center text-xs text-stone-400 mt-1">
-                ⚖️ 目前體重 <span className="font-bold text-[#EA7500]">{latestWeightLog.weight.toFixed(1)}</span> 公斤
+
+          return (
+            <div className="bg-amber-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+              <span className="text-base mb-1">⚖️</span>
+              <span className="text-[10px] text-stone-400 font-medium truncate w-full">目前體重</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
+                {latestWeightLog?.weight ? (
+                  <><span className="text-[#EA7500]">{latestWeightLog.weight.toFixed(1)}</span> kg</>
+                ) : (
+                  <span className="text-stone-300">無紀錄</span>
+                )}
               </div>
-            );
-          }
-          return null;
+            </div>
+          );
         })()}
-      </header>
+      </section>
 
       {/* Desktop: Two Column Layout / Mobile: Stack */}
       <div className="md:grid md:grid-cols-5 md:gap-6">
@@ -516,7 +553,7 @@ export const Home: React.FC = () => {
               </div>
 
               <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
-                (梳毛 +3, 飼料/水/給藥/體重 +2, 貓砂:乾淨+1/髒+4)
+                (梳毛 +3, 飼料/水/給藥/體重 +2, 貓砂:乾淨+1/髒+4, 驅蟲不計分)
               </div>
             </div>
           </section>
@@ -590,15 +627,15 @@ export const Home: React.FC = () => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-center text-xs text-stone-400 mt-2">過去14天</p>
+            <p className="text-center text-xs text-stone-400 mt-2">歷史紀錄</p>
           </div>
         </section>
       )}
 
       {/* Monthly Logs Section */}
       <section>
-        <div className="flex items-center justify-between mb-4 px-1">
-          <div className="flex items-center gap-2">
+        <div className="mb-4 px-1">
+          <div className="flex items-center gap-2 mb-2">
             <CalendarDays className="w-5 h-5 text-stone-400" />
             <h2 className="text-lg font-bold text-stone-700">月份紀錄</h2>
             <button
@@ -716,6 +753,7 @@ export const Home: React.FC = () => {
                               )}
                               {log.actions.grooming && <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-md text-xs font-medium">梳毛</span>}
                               {log.actions.medication && <span className="bg-cyan-100 text-cyan-700 px-2 py-1 rounded-md text-xs font-medium">給藥</span>}
+                              {log.actions.deworming && <span className="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"><Bug className="w-3 h-3" />驅蟲</span>}
                               {log.actions.bath && <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"><ShowerHead className="w-3 h-3" />洗澡</span>}
                               {log.weight && (
                                 <span className="bg-[#EA7500]/10 text-[#EA7500] px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">

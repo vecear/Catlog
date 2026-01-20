@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale, ShowerHead } from 'lucide-react';
+import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale, ShowerHead, Bug } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
 import { saveLog, getLog, updateLog, getLogs, getProfile } from '../services/storage';
 import { CareLog, StoolType, UrineStatus, Owner } from '../types';
@@ -27,13 +27,14 @@ export const AddLog: React.FC = () => {
     const [time, setTime] = useState(defaultTime);
     const [author, setAuthor] = useState<string>('');
     const [owners, setOwners] = useState<Owner[]>([]);
-    const [actionOrder, setActionOrder] = useState<string[]>(['food', 'water', 'litter', 'grooming', 'medication', 'bath', 'weight']);
+    const [actionOrder, setActionOrder] = useState<string[]>(['food', 'water', 'litter', 'grooming', 'medication', 'deworming', 'bath', 'weight']);
     const [actions, setActions] = useState({
         food: false,
         water: false,
         litter: false,
         grooming: false,
         medication: false,
+        deworming: false,
         bath: false,
     });
     const [stoolType, setStoolType] = useState<StoolType>(null);
@@ -132,7 +133,7 @@ export const AddLog: React.FC = () => {
         const timestamp = new Date(`${date}T${time}`).getTime();
 
         // Validate that at least one action is selected OR weight is being recorded
-        const hasAnyAction = actions.food || actions.water || actions.litter || actions.grooming || actions.medication || actions.bath;
+        const hasAnyAction = actions.food || actions.water || actions.litter || actions.grooming || actions.medication || actions.deworming || actions.bath;
         if (!hasAnyAction && !recordWeight) {
             alert("請至少選擇一個項目！");
             return;
@@ -498,6 +499,18 @@ export const AddLog: React.FC = () => {
                                                     active={actions.medication}
                                                     activeColorClass="bg-cyan-50 border-cyan-200"
                                                     activeIconClass="text-cyan-600"
+                                                />
+                                            );
+                                        case 'deworming':
+                                            return (
+                                                <ActionButton
+                                                    key="deworming"
+                                                    id="deworming"
+                                                    label="驅蟲"
+                                                    icon={Bug}
+                                                    active={actions.deworming}
+                                                    activeColorClass="bg-red-50 border-red-200"
+                                                    activeIconClass="text-red-500"
                                                 />
                                             );
                                         case 'bath':
