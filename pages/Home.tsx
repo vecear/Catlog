@@ -5,6 +5,8 @@ import { StatusCard } from '../components/StatusCard';
 import { getTodayStatus, getLogs, deleteLog, getProfile } from '../services/storage';
 import { CareLog, AppProfile, Owner } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { useAuth } from '../context/AuthContext';
+import { USER_MAPPING } from '../services/auth';
 
 const PET_TITLES = [
   "拆家王", "暴走王", "午睡王", "肥肥王", "臭屁王",
@@ -16,6 +18,8 @@ const PET_TITLES = [
 ];
 
 export const Home: React.FC = () => {
+  const { user } = useAuth();
+  const userName = user?.email ? USER_MAPPING[user.email] || user.email.split('@')[0] : '';
   const navigate = useNavigate();
   const [status, setStatus] = useState<any>({
     food: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
@@ -152,8 +156,6 @@ export const Home: React.FC = () => {
     );
   };
 
-
-  // ... (existing helper functions)
 
   // Helper to get owner by name
   const getOwnerByName = (name: string): Owner | undefined => {
@@ -354,24 +356,36 @@ export const Home: React.FC = () => {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-stone-800 tracking-tight flex items-center gap-2">
               <span className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-lg">🐱</span>
-              <span>
-                <span className="text-orange-500 mr-1">{randomTitle}</span>
-                {profile?.pet.name || '小賀'}的生活
-              </span>
+              <div className="flex flex-col items-start leading-none">
+
+                <span>
+                  <span className="text-orange-500 mr-1">{randomTitle}</span>
+                  {profile?.pet.name || '小賀'}的生活
+                </span>
+              </div>
             </h1>
             <button
               onClick={() => window.location.reload()}
-              className="p-1.5 rounded-full hover:bg-stone-100 text-stone-400 transition-all"
+              className="p-1.5 rounded-full hover:bg-stone-100 text-stone-400 transition-all ml-1"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
-          <button
-            onClick={() => navigate('/settings')}
-            className="p-2 text-stone-400 hover:bg-stone-50 rounded-full transition-colors"
-          >
-            <SettingsIcon className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            {user?.photoURL && (
+              <img
+                src={user.photoURL}
+                alt="User Profile"
+                className="w-8 h-8 rounded-full border border-stone-200"
+              />
+            )}
+            <button
+              onClick={() => navigate('/settings')}
+              className="p-2 text-stone-400 hover:bg-stone-50 rounded-full transition-colors"
+            >
+              <SettingsIcon className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </header>
 

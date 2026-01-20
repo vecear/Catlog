@@ -4,11 +4,14 @@ import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCi
 import { CombIcon } from '../components/icons/CombIcon';
 import { saveLog, getLog, updateLog, getLogs, getProfile } from '../services/storage';
 import { CareLog, StoolType, UrineStatus, Owner } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { USER_MAPPING } from '../services/auth';
 
 export const AddLog: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const isEditMode = !!id;
+    const { user } = useAuth();
 
     // Helper function to format date in local timezone (YYYY-MM-DD)
     const formatLocalDate = (date: Date) => {
@@ -72,10 +75,20 @@ export const AddLog: React.FC = () => {
         try {
             const profile = await getProfile();
             setOwners(profile.owners);
-            // Set default author to first owner if not in edit mode
-            if (!isEditMode && profile.owners.length > 0) {
-                setAuthor(profile.owners[0].name);
+
+            // Set default author
+            if (!isEditMode) {
+                // Check if current user maps to an owner
+                const mappedName = user?.email ? USER_MAPPING[user.email] : undefined;
+                const matchingOwner = mappedName ? profile.owners.find(o => o.name === mappedName) : undefined;
+
+                if (matchingOwner) {
+                    setAuthor(matchingOwner.name);
+                } else if (profile.owners.length > 0) {
+                    setAuthor(profile.owners[0].name);
+                }
             }
+
             // Load action order
             if (profile.actionOrder) {
                 setActionOrder(profile.actionOrder);

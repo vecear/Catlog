@@ -3,6 +3,12 @@ import { auth } from "./firebase";
 
 // Allowlist of emails that can sign in
 // In a production app, this might be in Firestore, but hardcoding is safer/easier for a personal app
+// User Mapping
+export const USER_MAPPING: Record<string, string> = {
+    "vecear@gmail.com": "CCL",
+    "feina0627@gmail.com": "RURU"
+};
+
 export const ALLOWED_EMAILS = [
     "vecear@gmail.com",
     "feina0627@gmail.com",
