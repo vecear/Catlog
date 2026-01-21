@@ -51,6 +51,7 @@ export interface CareLog {
     litter: boolean;
     grooming?: boolean;
     medication?: boolean;
+    supplements?: boolean;
     deworming?: boolean;
     bath?: boolean;
   };
@@ -76,6 +77,7 @@ export interface DayStatus {
   litter: TaskProgress;
   grooming: TaskProgress;
   medication: TaskProgress;
+  supplements: TaskProgress;
   weight: TaskProgress;
 }
 
@@ -85,6 +87,7 @@ export enum CareActionType {
   LITTER = 'LITTER',
   GROOMING = 'GROOMING',
   MEDICATION = 'MEDICATION',
+  SUPPLEMENTS = 'SUPPLEMENTS',
 }
 
 export interface WeightLog {

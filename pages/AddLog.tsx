@@ -37,6 +37,7 @@ export const AddLog: React.FC = () => {
         litter: false,
         grooming: false,
         medication: false,
+        supplements: false,
         deworming: false,
         bath: false,
     });
@@ -146,7 +147,7 @@ export const AddLog: React.FC = () => {
         const timestamp = new Date(`${date}T${time}`).getTime();
 
         // Validate that at least one action is selected OR weight is being recorded
-        const hasAnyAction = actions.food || actions.water || actions.litter || actions.grooming || actions.medication || actions.deworming || actions.bath;
+        const hasAnyAction = actions.food || actions.water || actions.litter || actions.grooming || actions.medication || actions.supplements || actions.deworming || actions.bath;
         if (!hasAnyAction && !recordWeight) {
             alert("請至少選擇一個項目！");
             return;
@@ -512,6 +513,18 @@ export const AddLog: React.FC = () => {
                                                     active={actions.medication}
                                                     activeColorClass="bg-cyan-50 border-cyan-200"
                                                     activeIconClass="text-cyan-600"
+                                                />
+                                            );
+                                        case 'supplements':
+                                            return (
+                                                <ActionButton
+                                                    key="supplements"
+                                                    id="supplements"
+                                                    label="保健食品"
+                                                    icon={Pill}
+                                                    active={actions.supplements}
+                                                    activeColorClass="bg-indigo-50 border-indigo-200"
+                                                    activeIconClass="text-indigo-600"
                                                 />
                                             );
                                         case 'deworming':

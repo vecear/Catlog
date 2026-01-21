@@ -19,6 +19,7 @@ export const Home: React.FC = () => {
     litter: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
     grooming: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
     medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+    supplements: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
     weight: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
   });
   const [logs, setLogs] = useState<CareLog[]>([]);
@@ -172,7 +173,7 @@ export const Home: React.FC = () => {
 
     logs.forEach(log => {
       if (log.timestamp >= mondayStart && log.timestamp < sundayEnd) {
-        const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
+        const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.actions.supplements ? 2 : 0) + (log.weight ? 2 : 0);
         if (ownerScores[log.author] !== undefined) {
           ownerScores[log.author] += points;
         }
@@ -204,7 +205,7 @@ export const Home: React.FC = () => {
 
       logs.forEach(log => {
         if (log.timestamp >= dayStart && log.timestamp < dayEnd) {
-          const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
+          const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.actions.supplements ? 2 : 0) + (log.weight ? 2 : 0);
           if (dayScores[log.author] !== undefined) {
             dayScores[log.author] += points;
           }
@@ -264,7 +265,7 @@ export const Home: React.FC = () => {
       totals[owner.name] = 0;
     });
     logs.forEach(log => {
-      const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
+      const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.actions.supplements ? 2 : 0) + (log.weight ? 2 : 0);
       if (totals[log.author] !== undefined) {
         totals[log.author] += points;
       }
@@ -554,7 +555,7 @@ export const Home: React.FC = () => {
               </div>
 
               <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
-                (梳毛 +3, 飼料/水/給藥/體重 +2, 貓砂:乾淨+1/髒+4, 驅蟲不計分)
+                (梳毛 +3, 飼料/水/給藥/保健/體重 +2, 貓砂:乾淨+1/髒+4, 驅蟲不計分)
               </div>
             </div>
           </section>
@@ -578,6 +579,7 @@ export const Home: React.FC = () => {
               <StatusCard type="litter" progress={status.litter} />
               <StatusCard type="grooming" progress={status.grooming} />
               <StatusCard type="medication" progress={status.medication} />
+              <StatusCard type="supplements" progress={status.supplements} />
               <StatusCard type="weight" progress={status.weight} />
             </div>
           </section>
@@ -754,6 +756,7 @@ export const Home: React.FC = () => {
                               )}
                               {log.actions.grooming && <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-md text-xs font-medium">梳毛</span>}
                               {log.actions.medication && <span className="bg-cyan-100 text-cyan-700 px-2 py-1 rounded-md text-xs font-medium">給藥</span>}
+                              {log.actions.supplements && <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium">保健</span>}
                               {log.actions.deworming && <span className="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"><Bug className="w-3 h-3" />驅蟲</span>}
                               {log.actions.bath && <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"><ShowerHead className="w-3 h-3" />洗澡</span>}
                               {log.weight && (

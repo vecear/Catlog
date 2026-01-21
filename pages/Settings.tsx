@@ -768,13 +768,14 @@ export const Settings: React.FC = () => {
         <p className="text-stone-400 text-sm mb-4">拖拉調整新增紀錄中項目的顯示順序</p>
 
         <div className="space-y-2">
-          {(profile?.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'deworming', 'bath', 'weight']).map((actionId) => {
+          {(profile?.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'deworming', 'bath', 'weight']).map((actionId) => {
             const actionLabels: Record<string, { name: string; color: string; icon: React.ElementType }> = {
               food: { name: '飼料', color: '#EAB308', icon: Utensils },
               water: { name: '飲水', color: '#921AFF', icon: Droplets },
               litter: { name: '貓砂', color: '#10B981', icon: Trash2 },
               grooming: { name: '梳毛', color: '#EC4899', icon: CombIcon },
               medication: { name: '給藥', color: '#06B6D4', icon: Pill },
+              supplements: { name: '保健食品', color: '#6366F1', icon: Pill }, // Using Indigo-500 (#6366F1) to match StatusCard config
               deworming: { name: '驅蟲', color: '#EF4444', icon: Bug },
               bath: { name: '洗澡', color: '#3B82F6', icon: ShowerHead },
               weight: { name: '體重', color: '#EA7500', icon: Scale },
