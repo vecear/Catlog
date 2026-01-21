@@ -5,7 +5,7 @@ import { getAuth } from "firebase/auth";
 // Firebase configuration
 // keys are technically public in a client-side app
 const firebaseConfig = {
-    apiKey: "AIzaSyCm7KdUyGJLr7SnSqBP7R1NsJlvKPOzGXk",
+    apiKey: "AIzaSyBJENv_Vhy3KFJtcDVzG4qmWmcCr389nsc",
     authDomain: "catlog-690c4.firebaseapp.com",
     projectId: "catlog-690c4",
     storageBucket: "catlog-690c4.firebasestorage.app",
