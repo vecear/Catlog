@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, Utensils, Droplets, Pill, Scale, ShowerHead, LogOut, Bug } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, Utensils, Droplets, Pill, Scale, ShowerHead, LogOut, Bug, Leaf } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
 import { clearAllLogs, getProfile, saveProfile, getLogs, saveLog } from '../services/storage';
 import { logout } from '../services/auth';
@@ -775,7 +775,7 @@ export const Settings: React.FC = () => {
               litter: { name: '貓砂', color: '#10B981', icon: Trash2 },
               grooming: { name: '梳毛', color: '#EC4899', icon: CombIcon },
               medication: { name: '給藥', color: '#06B6D4', icon: Pill },
-              supplements: { name: '保健食品', color: '#6366F1', icon: Pill }, // Using Indigo-500 (#6366F1) to match StatusCard config
+              supplements: { name: '保健食品', color: '#6366F1', icon: Leaf }, // Using Indigo-500 (#6366F1) to match StatusCard config
               deworming: { name: '驅蟲', color: '#EF4444', icon: Bug },
               bath: { name: '洗澡', color: '#3B82F6', icon: ShowerHead },
               weight: { name: '體重', color: '#EA7500', icon: Scale },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale, ShowerHead, Bug } from 'lucide-react';
+import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale, ShowerHead, Bug, Leaf } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
 import { saveLog, getLog, updateLog, getLogs, getProfile } from '../services/storage';
 import { CareLog, StoolType, UrineStatus, Owner } from '../types';
@@ -521,7 +521,7 @@ export const AddLog: React.FC = () => {
                                                     key="supplements"
                                                     id="supplements"
                                                     label="保健食品"
-                                                    icon={Pill}
+                                                    icon={Leaf}
                                                     active={actions.supplements}
                                                     activeColorClass="bg-indigo-50 border-indigo-200"
                                                     activeIconClass="text-indigo-600"

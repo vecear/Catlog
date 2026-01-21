@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Utensils, Droplets, Trash2, Pill, Scale } from 'lucide-react';
+import { Check, Utensils, Droplets, Trash2, Pill, Scale, Leaf } from 'lucide-react';
 import { CombIcon } from './icons/CombIcon';
 import { TaskProgress } from '../types';
 
@@ -52,7 +52,7 @@ export const StatusCard: React.FC<StatusCardProps> = ({ type, progress }) => {
     },
     supplements: {
       label: '保健食品',
-      icon: Pill, // user said "跟給藥一樣", so maybe same icon or similar. Pill is good.
+      icon: Leaf,
       color: 'bg-indigo-50',
       activeColor: 'bg-indigo-400',
       textColor: 'text-indigo-700',
