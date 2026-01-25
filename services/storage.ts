@@ -16,6 +16,7 @@ export const DEFAULT_PROFILE: AppProfile = {
   pet: {
     name: '小賀',
     birthday: '2025-06-08',
+    adoptionDate: '2025-09-16',
   },
 };
 

@@ -23,6 +23,8 @@ export const Settings: React.FC = () => {
   const [petNameInput, setPetNameInput] = useState('');
   const [editingPetBirthday, setEditingPetBirthday] = useState(false);
   const [petBirthdayInput, setPetBirthdayInput] = useState('');
+  const [editingAdoptionDate, setEditingAdoptionDate] = useState(false);
+  const [adoptionDateInput, setAdoptionDateInput] = useState('');
   const [newOwnerName, setNewOwnerName] = useState('');
   const [newOwnerColor, setNewOwnerColor] = useState(OWNER_COLORS[0].value);
   const [showAddOwner, setShowAddOwner] = useState(false);
@@ -54,6 +56,7 @@ export const Settings: React.FC = () => {
     setProfile(loadedProfile);
     setPetNameInput(loadedProfile.pet.name);
     setPetBirthdayInput(loadedProfile.pet.birthday);
+    setAdoptionDateInput(loadedProfile.pet.adoptionDate || '');
     setIsLoading(false);
   };
 
@@ -481,6 +484,55 @@ export const Settings: React.FC = () => {
                 <span className="font-medium text-stone-500">{profile?.pet.birthday}</span>
                 <button
                   onClick={() => setEditingPetBirthday(true)}
+                  className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-stone-600">來家裡的日子</span>
+            {editingAdoptionDate ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={adoptionDateInput}
+                  onChange={(e) => setAdoptionDateInput(e.target.value)}
+                  className="px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
+                  autoFocus
+                />
+                <button
+                  onClick={async () => {
+                    if (!profile || !adoptionDateInput) return;
+                    const newProfile = {
+                      ...profile,
+                      pet: { ...profile.pet, adoptionDate: adoptionDateInput },
+                    };
+                    await handleSaveProfile(newProfile);
+                    setEditingAdoptionDate(false);
+                  }}
+                  disabled={isSaving}
+                  className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingAdoptionDate(false);
+                    setAdoptionDateInput(profile?.pet.adoptionDate || '');
+                  }}
+                  className="p-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-stone-500">{profile?.pet.adoptionDate || '尚未設定'}</span>
+                <button
+                  onClick={() => setEditingAdoptionDate(true)}
                   className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
                 >
                   <Edit2 className="w-4 h-4" />

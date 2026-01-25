@@ -355,8 +355,20 @@ export const Home: React.FC = () => {
             <h1 className="text-2xl font-black text-stone-800 tracking-tight flex items-center gap-2">
               <span className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-lg">🐱</span>
               <span>
-                <span className="text-orange-500 mr-1">{randomTitle}</span>
-                {profile?.pet.name || '小賀'}的生活
+                {profile?.pet.adoptionDate ? (
+                  <>
+                    有{profile?.pet.name || '小賀'}的第
+                    <span className="text-orange-500 mx-1">
+                      {Math.floor((Date.now() - new Date(profile.pet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}
+                    </span>
+                    天
+                  </>
+                ) : (
+                  <>
+                    <span className="text-orange-500 mr-1">{randomTitle}</span>
+                    {profile?.pet.name || '小賀'}的生活
+                  </>
+                )}
               </span>
             </h1>
             <button

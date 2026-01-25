@@ -34,6 +34,7 @@ export interface Owner {
 export interface PetProfile {
   name: string;
   birthday: string; // YYYY-MM-DD format
+  adoptionDate?: string; // YYYY-MM-DD format - when the pet came home
 }
 
 export interface AppProfile {
