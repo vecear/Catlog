@@ -345,14 +345,17 @@ export const Home: React.FC = () => {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-stone-800 tracking-tight flex items-center gap-2">
               <span className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-lg">🐱</span>
-              <span>
+              <span className="flex flex-col md:flex-row md:gap-1">
                 {profile?.pet.adoptionDate ? (
                   <>
-                    有{profile?.pet.name || '小賀'}的第
-                    <span className="text-orange-500 mx-1">
-                      {Math.floor((Date.now() - new Date(profile.pet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}
+                    <span>有{profile?.pet.name || '小賀'}的</span>
+                    <span>
+                      第
+                      <span className="text-orange-500 mx-1">
+                        {Math.floor((Date.now() - new Date(profile.pet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}
+                      </span>
+                      天
                     </span>
-                    天
                   </>
                 ) : (
                   <>
