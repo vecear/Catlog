@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 驗證函式：檢查使用者是否已登入且在白名單內
+    function isAuthorized() {
+      return request.auth != null && 
+             (request.auth.token.email == 'vecear@gmail.com' ||
+              request.auth.token.email == 'feina0627@gmail.com');
+    }
+
+    // 1. 日誌 (logs)
+    match /logs/{logId} {
+      allow read, delete: if isAuthorized();
+      allow create, update: if isAuthorized() && request.resource.data.timestamp is number;
+    }
+    
+    // 2. 體重記錄 (weight_logs)
+    match /weight_logs/{logId} {
+      allow read, delete: if isAuthorized();
+      allow create, update: if isAuthorized() && request.resource.data.timestamp is number;
+    }
+    
+    // 3. App 設定 (app_profile)
+    match /app_profile/{docId} {
+      allow read, delete: if isAuthorized();
+      allow create, update: if isAuthorized() && request.resource.data.keys().hasAny(['owners', 'pet']);
+    }
+    
+    // 4. 拒絕其他所有未知的路徑
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

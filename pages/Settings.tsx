@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, Utensils, Droplets, Pill, Scale, ShowerHead, Bug } from 'lucide-react';
+import { ArrowLeft, Trash2, AlertTriangle, X, Lock, Plus, Palette, Edit2, Check, User, Cat, Download, Upload, GripVertical, Utensils, Droplets, Pill, Scale, ShowerHead, LogOut, Bug, Leaf } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
 import { clearAllLogs, getProfile, saveProfile, getLogs, saveLog } from '../services/storage';
+import { logout } from '../services/auth';
 import { AppProfile, Owner, OWNER_COLORS } from '../types';
 
 export const Settings: React.FC = () => {
@@ -384,14 +385,28 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in-up max-w-2xl mx-auto">
-      <div className="flex items-center gap-4 mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6 text-stone-700" />
+          </button>
+          <h2 className="text-2xl font-bold text-stone-800">設定</h2>
+        </div>
         <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors"
+          onClick={async () => {
+            if (window.confirm('確定要登出嗎？')) {
+              await logout();
+              navigate('/login');
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-600 rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors"
         >
-          <ArrowLeft className="w-6 h-6 text-stone-700" />
+          <LogOut className="w-4 h-4" />
+          <span className="font-bold text-sm">登出</span>
         </button>
-        <h2 className="text-2xl font-bold text-stone-800">設定</h2>
       </div>
 
       {/* Pet Profile Section */}
@@ -805,13 +820,14 @@ export const Settings: React.FC = () => {
         <p className="text-stone-400 text-sm mb-4">拖拉調整新增紀錄中項目的顯示順序</p>
 
         <div className="space-y-2">
-          {(profile?.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'deworming', 'bath', 'weight']).map((actionId) => {
+          {(profile?.actionOrder || ['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'deworming', 'bath', 'weight']).map((actionId) => {
             const actionLabels: Record<string, { name: string; color: string; icon: React.ElementType }> = {
               food: { name: '飼料', color: '#EAB308', icon: Utensils },
               water: { name: '飲水', color: '#921AFF', icon: Droplets },
               litter: { name: '貓砂', color: '#10B981', icon: Trash2 },
               grooming: { name: '梳毛', color: '#EC4899', icon: CombIcon },
               medication: { name: '給藥', color: '#06B6D4', icon: Pill },
+              supplements: { name: '保健食品', color: '#6366F1', icon: Leaf }, // Using Indigo-500 (#6366F1) to match StatusCard config
               deworming: { name: '驅蟲', color: '#EF4444', icon: Bug },
               bath: { name: '洗澡', color: '#3B82F6', icon: ShowerHead },
               weight: { name: '體重', color: '#EA7500', icon: Scale },

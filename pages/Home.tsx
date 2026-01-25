@@ -5,17 +5,13 @@ import { StatusCard } from '../components/StatusCard';
 import { getTodayStatus, getLogs, deleteLog, getProfile } from '../services/storage';
 import { CareLog, AppProfile, Owner } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { useAuth } from '../context/AuthContext';
+import { USER_MAPPING } from '../services/auth';
 
-const PET_TITLES = [
-  "拆家王", "暴走王", "午睡王", "肥肥王", "臭屁王",
-  "夜衝王", "刮抓王", "液態王", "吵醒王", "翻肚王",
-  "破壞王", "吃貨王", "瞪人王", "卡屎王", "廢萌王",
-  "黏黏王", "小霸王", "毛球王", "跳桌王", "亂吃王",
-  "開門王", "鬼叫王", "撒嬌王", "冷眼王", "軟爛王",
-  "毛怪王", "掉毛王", "咬手王", "貼身王", "瞬移王"
-];
 
 export const Home: React.FC = () => {
+  const { user } = useAuth();
+  const userName = user?.email ? USER_MAPPING[user.email] || user.email.split('@')[0] : '';
   const navigate = useNavigate();
   const [status, setStatus] = useState<any>({
     food: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
@@ -23,6 +19,7 @@ export const Home: React.FC = () => {
     litter: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
     grooming: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
     medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+    supplements: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
     weight: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
   });
   const [logs, setLogs] = useState<CareLog[]>([]);
@@ -30,10 +27,6 @@ export const Home: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [profile, setProfile] = useState<AppProfile | null>(null);
-
-  const randomTitle = useMemo(() => {
-    return PET_TITLES[Math.floor(Math.random() * PET_TITLES.length)];
-  }, []);
 
   const fetchData = async () => {
     setIsRefreshing(true);
@@ -153,8 +146,6 @@ export const Home: React.FC = () => {
   };
 
 
-  // ... (existing helper functions)
-
   // Helper to get owner by name
   const getOwnerByName = (name: string): Owner | undefined => {
     return profile?.owners.find(o => o.name === name);
@@ -182,7 +173,7 @@ export const Home: React.FC = () => {
 
     logs.forEach(log => {
       if (log.timestamp >= mondayStart && log.timestamp < sundayEnd) {
-        const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
+        const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.actions.supplements ? 2 : 0) + (log.weight ? 2 : 0);
         if (ownerScores[log.author] !== undefined) {
           ownerScores[log.author] += points;
         }
@@ -214,7 +205,7 @@ export const Home: React.FC = () => {
 
       logs.forEach(log => {
         if (log.timestamp >= dayStart && log.timestamp < dayEnd) {
-          const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
+          const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.actions.supplements ? 2 : 0) + (log.weight ? 2 : 0);
           if (dayScores[log.author] !== undefined) {
             dayScores[log.author] += points;
           }
@@ -274,7 +265,7 @@ export const Home: React.FC = () => {
       totals[owner.name] = 0;
     });
     logs.forEach(log => {
-      const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.weight ? 2 : 0);
+      const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.actions.supplements ? 2 : 0) + (log.weight ? 2 : 0);
       if (totals[log.author] !== undefined) {
         totals[log.author] += points;
       }
@@ -365,7 +356,6 @@ export const Home: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <span className="text-orange-500 mr-1">{randomTitle}</span>
                     {profile?.pet.name || '小賀'}的生活
                   </>
                 )}
@@ -373,17 +363,26 @@ export const Home: React.FC = () => {
             </h1>
             <button
               onClick={() => window.location.reload()}
-              className="p-1.5 rounded-full hover:bg-stone-100 text-stone-400 transition-all"
+              className="p-1.5 rounded-full hover:bg-stone-100 text-stone-400 transition-all ml-1"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
-          <button
-            onClick={() => navigate('/settings')}
-            className="p-2 text-stone-400 hover:bg-stone-50 rounded-full transition-colors"
-          >
-            <SettingsIcon className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            {user?.photoURL && (
+              <img
+                src={user.photoURL}
+                alt="User Profile"
+                className="w-8 h-8 rounded-full border border-stone-200"
+              />
+            )}
+            <button
+              onClick={() => navigate('/settings')}
+              className="p-2 text-stone-400 hover:bg-stone-50 rounded-full transition-colors"
+            >
+              <SettingsIcon className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -565,7 +564,7 @@ export const Home: React.FC = () => {
               </div>
 
               <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
-                (梳毛 +3, 飼料/水/給藥/體重 +2, 貓砂:乾淨+1/髒+4, 驅蟲不計分)
+                (梳毛 +3, 飼料/水/給藥/保健/體重 +2, 貓砂:乾淨+1/髒+4, 驅蟲不計分)
               </div>
             </div>
           </section>
@@ -589,6 +588,7 @@ export const Home: React.FC = () => {
               <StatusCard type="litter" progress={status.litter} />
               <StatusCard type="grooming" progress={status.grooming} />
               <StatusCard type="medication" progress={status.medication} />
+              <StatusCard type="supplements" progress={status.supplements} />
               <StatusCard type="weight" progress={status.weight} />
             </div>
           </section>
@@ -765,6 +765,7 @@ export const Home: React.FC = () => {
                               )}
                               {log.actions.grooming && <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-md text-xs font-medium">梳毛</span>}
                               {log.actions.medication && <span className="bg-cyan-100 text-cyan-700 px-2 py-1 rounded-md text-xs font-medium">給藥</span>}
+                              {log.actions.supplements && <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium">保健</span>}
                               {log.actions.deworming && <span className="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"><Bug className="w-3 h-3" />驅蟲</span>}
                               {log.actions.bath && <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"><ShowerHead className="w-3 h-3" />洗澡</span>}
                               {log.weight && (

@@ -39,6 +39,18 @@ export const getProfile = async (): Promise<AppProfile> => {
         }
         data.actionOrder = newOrder;
       }
+      // Migration: Ensure 'supplements' is in actionOrder if it's missing
+      if (data.actionOrder && !data.actionOrder.includes('supplements')) {
+        const newOrder = [...data.actionOrder];
+        // Insert after 'medication' or at the end
+        const medIndex = newOrder.indexOf('medication');
+        if (medIndex !== -1) {
+          newOrder.splice(medIndex + 1, 0, 'supplements');
+        } else {
+          newOrder.push('supplements');
+        }
+        data.actionOrder = newOrder;
+      }
       return data;
     }
     // Return default if not exists
@@ -246,6 +258,7 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
       litter: initProgress(),
       grooming: initProgress(),
       medication: initProgress(),
+      supplements: initProgress(),
       weight: initProgress(),
     };
 
@@ -287,6 +300,13 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
         if (period === 'bedtime') status.medication.bedtime = true;
       }
 
+      if (log.actions.supplements) {
+        if (period === 'morning') status.supplements.morning = true;
+        if (period === 'noon') status.supplements.noon = true;
+        if (period === 'evening') status.supplements.evening = true;
+        if (period === 'bedtime') status.supplements.bedtime = true;
+      }
+
       if (log.weight !== undefined && log.weight !== null) {
         if (period === 'morning') status.weight.morning = true;
         if (period === 'noon') status.weight.noon = true;
@@ -301,6 +321,7 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
     status.litter.isComplete = status.litter.morning && status.litter.noon && status.litter.evening && status.litter.bedtime;
     status.grooming.isComplete = status.grooming.morning && status.grooming.noon && status.grooming.evening && status.grooming.bedtime;
     status.medication.isComplete = status.medication.morning && status.medication.noon && status.medication.evening && status.medication.bedtime;
+    status.supplements.isComplete = status.supplements.morning && status.supplements.noon && status.supplements.evening && status.supplements.bedtime;
     status.weight.isComplete = status.weight.morning && status.weight.noon && status.weight.evening && status.weight.bedtime;
 
     return status;
@@ -314,6 +335,7 @@ export const getTodayStatus = async (): Promise<DayStatus> => {
       litter: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
       grooming: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
       medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
+      supplements: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
       weight: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
     };
   }
