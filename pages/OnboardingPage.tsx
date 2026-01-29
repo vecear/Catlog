@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { logout } from '../services/auth';
 import { completeOnboarding, createPet, getPet, createCareRequest, updateUserProfile } from '../services/storage';
-import { PetType, PetGender, PET_TYPE_LABELS, PET_TYPE_ICONS, PET_GENDER_LABELS } from '../types';
+import { PetType, PetGender, PET_TYPE_LABELS, PET_TYPE_ICONS, PET_GENDER_LABELS, OWNER_COLORS } from '../types';
 import { User, PawPrint, Plus, Users, ArrowRight, ArrowLeft, Check, Search, Sparkles, LogOut } from 'lucide-react';
 
 type OnboardingStep = 'displayName' | 'petChoice' | 'addPet' | 'joinPet' | 'joinPetConfirm';
@@ -16,8 +16,9 @@ export const OnboardingPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Display name
+    // Display name and color
     const [displayName, setDisplayName] = useState('');
+    const [selectedColor, setSelectedColor] = useState(OWNER_COLORS[0].value);
 
     // Add pet form
     const [petName, setPetName] = useState('');
@@ -69,7 +70,7 @@ export const OnboardingPage: React.FC = () => {
         setIsLoading(true);
         setError('');
         try {
-            await updateUserProfile(user.uid, { displayName: displayName.trim() });
+            await updateUserProfile(user.uid, { displayName: displayName.trim(), color: selectedColor });
             await refreshUserProfile();
 
             // Check if user already has pets (from migration)
@@ -191,8 +192,11 @@ export const OnboardingPage: React.FC = () => {
                 return (
                     <div className="space-y-6">
                         <div className="text-center">
-                            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <User className="w-8 h-8 text-blue-500" />
+                            <div
+                                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold transition-colors"
+                                style={{ backgroundColor: selectedColor }}
+                            >
+                                {displayName ? displayName.charAt(0).toUpperCase() : <User className="w-8 h-8" />}
                             </div>
                             <h2 className="text-2xl font-bold text-gray-800 mb-2">設定您的名稱</h2>
                             <p className="text-gray-500">這個名稱會顯示在照護記錄中</p>
@@ -208,6 +212,27 @@ export const OnboardingPage: React.FC = () => {
                                 disabled={isLoading}
                                 autoFocus
                             />
+                        </div>
+
+                        {/* Color Picker */}
+                        <div>
+                            <p className="text-sm text-gray-500 mb-3 text-center">選擇您的代表色</p>
+                            <div className="grid grid-cols-5 gap-2 justify-items-center">
+                                {OWNER_COLORS.map((color) => (
+                                    <button
+                                        key={color.value}
+                                        onClick={() => setSelectedColor(color.value)}
+                                        className={`w-10 h-10 rounded-full border-2 hover:scale-110 transition-transform ${
+                                            selectedColor === color.value
+                                                ? 'border-gray-800 ring-2 ring-offset-2 ring-gray-400'
+                                                : 'border-white'
+                                        }`}
+                                        style={{ backgroundColor: color.value }}
+                                        title={color.name}
+                                        disabled={isLoading}
+                                    />
+                                ))}
+                            </div>
                         </div>
 
                         <button
