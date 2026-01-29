@@ -551,21 +551,48 @@ export const addOwnerToPet = async (petId: string, userId: string): Promise<void
       throw new Error('Pet not found');
     }
 
+    // Only update the pet's ownerIds
+    // The user's petIds will be synced automatically via syncUserPetIds when they log in
+    // This avoids permission issues where the approver can't update another user's profile
     if (!pet.ownerIds.includes(userId)) {
       await updatePet(petId, {
         ownerIds: [...pet.ownerIds, userId],
       });
     }
+  } catch (e) {
+    console.error("Failed to add owner to pet", e);
+    throw e;
+  }
+};
 
-    // Add pet to user's petIds
+export const removeOwnerFromPet = async (petId: string, userId: string): Promise<void> => {
+  try {
+    const pet = await getPet(petId);
+    if (!pet) {
+      throw new Error('找不到寵物');
+    }
+
+    // Cannot remove the creator
+    if (pet.createdBy === userId) {
+      throw new Error('建立者無法退出');
+    }
+
+    // Remove user from pet's ownerIds
+    if (pet.ownerIds.includes(userId)) {
+      await updatePet(petId, {
+        ownerIds: pet.ownerIds.filter(id => id !== userId),
+      });
+    }
+
+    // Remove pet from user's petIds
     const userProfile = await getUserProfile(userId);
-    if (userProfile && !userProfile.petIds.includes(petId)) {
+    if (userProfile && userProfile.petIds.includes(petId)) {
       await updateUserProfile(userId, {
-        petIds: [...userProfile.petIds, petId],
+        petIds: userProfile.petIds.filter(id => id !== petId),
       });
     }
   } catch (e) {
-    console.error("Failed to add owner to pet", e);
+    console.error("Failed to remove owner from pet", e);
     throw e;
   }
 };
@@ -754,6 +781,47 @@ export const respondToCareRequest = async (
   } catch (e) {
     console.error("Failed to respond to care request", e);
     throw e;
+  }
+};
+
+// ============================================
+// Sync User's petIds (for fixing mismatches)
+// ============================================
+
+// Find all pets where the user is an owner and sync their petIds
+export const syncUserPetIds = async (userId: string): Promise<{ fixed: boolean; petIds: string[] }> => {
+  try {
+    const userProfile = await getUserProfile(userId);
+    if (!userProfile) {
+      return { fixed: false, petIds: [] };
+    }
+
+    // Query all pets where this user is in ownerIds
+    const q = query(
+      collection(db, PETS_COLLECTION),
+      where('ownerIds', 'array-contains', userId)
+    );
+    const querySnapshot = await getDocs(q);
+    const foundPetIds = querySnapshot.docs.map(doc => doc.id);
+
+    // Check if there's a mismatch
+    const currentPetIds = userProfile.petIds || [];
+    const missingPetIds = foundPetIds.filter(id => !currentPetIds.includes(id));
+
+    if (missingPetIds.length > 0) {
+      // Update user's petIds to include all found pets
+      const newPetIds = [...new Set([...currentPetIds, ...foundPetIds])];
+      await updateUserProfile(userId, {
+        petIds: newPetIds,
+        onboardingComplete: true, // Also mark onboarding complete
+      });
+      return { fixed: true, petIds: newPetIds };
+    }
+
+    return { fixed: false, petIds: currentPetIds };
+  } catch (e) {
+    console.error("Failed to sync user petIds", e);
+    return { fixed: false, petIds: [] };
   }
 };
 

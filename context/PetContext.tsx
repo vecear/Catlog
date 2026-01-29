@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { Pet, CareLog, DayStatus, UserProfile } from '../types';
-import { getUserPets, getPet, getPetLogs, getPetTodayStatus, savePetLog, updatePetLog, deletePetLog, getPetOwners } from '../services/storage';
+import { getUserPets, getPet, getPetLogs, getPetTodayStatus, savePetLog, updatePetLog, deletePetLog, getPetOwners, syncUserPetIds } from '../services/storage';
 
 interface PetContextType {
     pets: Pet[];
@@ -68,7 +68,17 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         try {
-            const userPets = await getUserPets(user.uid);
+            let userPets = await getUserPets(user.uid);
+
+            // If no pets found, check if there's a mismatch (user is owner but petIds not updated)
+            if (userPets.length === 0) {
+                const syncResult = await syncUserPetIds(user.uid);
+                if (syncResult.fixed) {
+                    // Reload pets after fixing the mismatch
+                    userPets = await getUserPets(user.uid);
+                }
+            }
+
             setPets(userPets);
 
             // Auto-select first pet if none selected

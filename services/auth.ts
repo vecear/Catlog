@@ -8,6 +8,10 @@ import {
     linkWithCredential,
     EmailAuthProvider,
     fetchSignInMethodsForEmail,
+    reauthenticateWithCredential,
+    updateEmail,
+    updatePassword,
+    verifyBeforeUpdateEmail,
     User
 } from "firebase/auth";
 import { auth } from "./firebase";
@@ -122,6 +126,62 @@ export const getLinkedProviders = (user: User): ('google' | 'password')[] => {
         }
     });
     return providers;
+};
+
+// Re-authenticate user with email/password (required before sensitive operations)
+export const reauthenticateWithPassword = async (user: User, currentPassword: string) => {
+    try {
+        const email = user.email;
+        if (!email) {
+            throw new Error('找不到電子郵件');
+        }
+        const credential = EmailAuthProvider.credential(email, currentPassword);
+        await reauthenticateWithCredential(user, credential);
+    } catch (error: any) {
+        console.error("Error re-authenticating", error);
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            throw new Error('目前密碼錯誤');
+        }
+        throw error;
+    }
+};
+
+// Update user's email (requires re-authentication)
+export const updateUserEmail = async (user: User, newEmail: string, currentPassword: string) => {
+    try {
+        // Re-authenticate first
+        await reauthenticateWithPassword(user, currentPassword);
+        // Update email
+        await updateEmail(user, newEmail);
+    } catch (error: any) {
+        console.error("Error updating email", error);
+        if (error.code === 'auth/email-already-in-use') {
+            throw new Error('此電子郵件已被使用');
+        } else if (error.code === 'auth/invalid-email') {
+            throw new Error('電子郵件格式無效');
+        } else if (error.code === 'auth/requires-recent-login') {
+            throw new Error('請重新登入後再試');
+        }
+        throw error;
+    }
+};
+
+// Update user's password (requires re-authentication)
+export const updateUserPassword = async (user: User, currentPassword: string, newPassword: string) => {
+    try {
+        // Re-authenticate first
+        await reauthenticateWithPassword(user, currentPassword);
+        // Update password
+        await updatePassword(user, newPassword);
+    } catch (error: any) {
+        console.error("Error updating password", error);
+        if (error.code === 'auth/weak-password') {
+            throw new Error('新密碼強度不足，請使用至少 6 個字元');
+        } else if (error.code === 'auth/requires-recent-login') {
+            throw new Error('請重新登入後再試');
+        }
+        throw error;
+    }
 };
 
 // Logout

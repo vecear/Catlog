@@ -1,7 +1,7 @@
 {
-    "name": "小賀Log",
-    "short_name": "小賀Log",
-    "description": "小賀的日常記錄",
+    "name": "PetLog",
+    "short_name": "PetLog",
+    "description": "寵物照顧日誌",
     "start_url": "/Catlog/",
     "scope": "/Catlog/",
     "display": "standalone",

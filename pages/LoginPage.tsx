@@ -61,7 +61,7 @@ export const LoginPage: React.FC = () => {
                     <LogIn className="w-8 h-8 text-blue-500" />
                 </div>
 
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">歡迎回來</h1>
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">歡迎使用 PetLog</h1>
                 <p className="text-gray-500 mb-6">登入以管理您的寵物記錄</p>
 
                 {error && (

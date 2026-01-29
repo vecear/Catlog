@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug, Clock } from 'lucide-react';
+import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug, Clock, LogOut } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
 import { CareLog, UserProfile, CareRequest, PET_TYPE_ICONS } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { usePet } from '../context/PetContext';
 import { getPendingCareRequestsForUser } from '../services/storage';
+import { logout } from '../services/auth';
 
 
 export const Home: React.FC = () => {
@@ -367,6 +368,16 @@ export const Home: React.FC = () => {
             <RefreshCw className="w-4 h-4" />
             重新整理
           </button>
+          <button
+            onClick={async () => {
+              await logout();
+              navigate('/login');
+            }}
+            className="mt-4 flex items-center gap-2 text-stone-400 hover:text-stone-600"
+          >
+            <LogOut className="w-4 h-4" />
+            返回登入畫面
+          </button>
         </div>
       );
     }
@@ -398,11 +409,11 @@ export const Home: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-stone-600 tracking-tight">
               {selectedPet.adoptionDate ? (
                 <>
-                  有<span className="text-amber-600 font-black">{petIcon}{petName}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
+                  有<span className="text-amber-600 font-black">{petName}{petIcon}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
                 </>
               ) : (
                 <>
-                  <span className="text-amber-600 font-black">{petIcon}{petName}</span>的生活
+                  <span className="text-amber-600 font-black">{petName}{petIcon}</span>的生活
                 </>
               )}
             </h1>

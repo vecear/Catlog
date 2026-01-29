@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, X, Palette, Edit2, Check, User, Cat, LogOut, Link, Mail, Users, Copy, CheckCircle, XCircle, Eye, EyeOff, Database, UserPlus, Loader2 } from 'lucide-react';
+import { ArrowLeft, X, Palette, Edit2, Check, User, Cat, LogOut, Link, Mail, Users, Copy, CheckCircle, XCircle, Eye, EyeOff, Database, UserPlus, Loader2, UserMinus } from 'lucide-react';
 import {
   getUserPets,
   updatePet,
@@ -9,11 +9,12 @@ import {
   respondToCareRequest,
   updateUserProfile,
   getUserByEmail,
-  addOwnerToPet
+  addOwnerToPet,
+  removeOwnerFromPet
 } from '../services/storage';
-import { logout, linkGoogleAccount, linkEmailPassword, getLinkedProviders } from '../services/auth';
+import { logout, linkGoogleAccount, linkEmailPassword, getLinkedProviders, updateUserEmail, updateUserPassword } from '../services/auth';
 import { useAuth } from '../context/AuthContext';
-import { Pet, UserProfile, CareRequest, OWNER_COLORS, PET_TYPE_LABELS, PET_TYPE_ICONS } from '../types';
+import { Pet, UserProfile, CareRequest, OWNER_COLORS, PET_TYPE_LABELS, PET_TYPE_ICONS, PetType, PetGender, PET_GENDER_LABELS } from '../types';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -38,6 +39,23 @@ export const Settings: React.FC = () => {
   const [showLinkPassword, setShowLinkPassword] = useState(false);
   const [linkError, setLinkError] = useState('');
 
+  // Edit email/password states
+  const [showEditEmail, setShowEditEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [editEmailPassword, setEditEmailPassword] = useState('');
+  const [showEditEmailPassword, setShowEditEmailPassword] = useState(false);
+  const [editEmailError, setEditEmailError] = useState('');
+  const [editEmailLoading, setEditEmailLoading] = useState(false);
+
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [editPasswordError, setEditPasswordError] = useState('');
+  const [editPasswordLoading, setEditPasswordLoading] = useState(false);
+
   // Edit states
   const [editingPetName, setEditingPetName] = useState(false);
   const [petNameInput, setPetNameInput] = useState('');
@@ -45,6 +63,10 @@ export const Settings: React.FC = () => {
   const [petBirthdayInput, setPetBirthdayInput] = useState('');
   const [editingPetAdoptionDate, setEditingPetAdoptionDate] = useState(false);
   const [petAdoptionDateInput, setPetAdoptionDateInput] = useState('');
+  const [editingPetType, setEditingPetType] = useState(false);
+  const [petTypeInput, setPetTypeInput] = useState<PetType>('cat');
+  const [editingPetGender, setEditingPetGender] = useState(false);
+  const [petGenderInput, setPetGenderInput] = useState<PetGender>('unknown');
   const [editingDisplayName, setEditingDisplayName] = useState(false);
   const [displayNameInput, setDisplayNameInput] = useState('');
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -78,6 +100,8 @@ export const Settings: React.FC = () => {
         setPetNameInput(userPets[0].name);
         setPetBirthdayInput(userPets[0].birthday);
         setPetAdoptionDateInput(userPets[0].adoptionDate);
+        setPetTypeInput(userPets[0].type);
+        setPetGenderInput(userPets[0].gender);
       }
 
       // Load care requests
@@ -144,6 +168,36 @@ export const Settings: React.FC = () => {
       await updatePet(selectedPet.id, { adoptionDate: petAdoptionDateInput });
       setPets(pets.map(p => p.id === selectedPet.id ? { ...p, adoptionDate: petAdoptionDateInput } : p));
       setEditingPetAdoptionDate(false);
+    } catch (error) {
+      alert('儲存失敗，請重試');
+    }
+    setIsSaving(false);
+  };
+
+  const handleUpdatePetType = async (newType: PetType) => {
+    if (!selectedPet) return;
+
+    setIsSaving(true);
+    try {
+      await updatePet(selectedPet.id, { type: newType });
+      setPets(pets.map(p => p.id === selectedPet.id ? { ...p, type: newType } : p));
+      setPetTypeInput(newType);
+      setEditingPetType(false);
+    } catch (error) {
+      alert('儲存失敗，請重試');
+    }
+    setIsSaving(false);
+  };
+
+  const handleUpdatePetGender = async (newGender: PetGender) => {
+    if (!selectedPet) return;
+
+    setIsSaving(true);
+    try {
+      await updatePet(selectedPet.id, { gender: newGender });
+      setPets(pets.map(p => p.id === selectedPet.id ? { ...p, gender: newGender } : p));
+      setPetGenderInput(newGender);
+      setEditingPetGender(false);
     } catch (error) {
       alert('儲存失敗，請重試');
     }
@@ -283,6 +337,125 @@ export const Settings: React.FC = () => {
     }
 
     setAddOwnerLoading(false);
+  };
+
+  const handleUpdateEmail = async () => {
+    if (!user) return;
+    setEditEmailError('');
+
+    if (!newEmail.trim()) {
+      setEditEmailError('請輸入新的電子郵件');
+      return;
+    }
+
+    if (!editEmailPassword) {
+      setEditEmailError('請輸入目前密碼以驗證身份');
+      return;
+    }
+
+    setEditEmailLoading(true);
+    try {
+      await updateUserEmail(user, newEmail.trim(), editEmailPassword);
+      // Update user profile in Firestore too
+      await updateUserProfile(user.uid, { email: newEmail.trim().toLowerCase() });
+      await refreshUserProfile();
+      setShowEditEmail(false);
+      setNewEmail('');
+      setEditEmailPassword('');
+      alert('電子郵件已更新！');
+    } catch (error: any) {
+      setEditEmailError(error.message || '更新失敗，請重試');
+    }
+    setEditEmailLoading(false);
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!user) return;
+    setEditPasswordError('');
+
+    if (!currentPassword) {
+      setEditPasswordError('請輸入目前密碼');
+      return;
+    }
+
+    if (!newPassword) {
+      setEditPasswordError('請輸入新密碼');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setEditPasswordError('新密碼至少需要 6 個字元');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setEditPasswordError('新密碼與確認密碼不符');
+      return;
+    }
+
+    setEditPasswordLoading(true);
+    try {
+      await updateUserPassword(user, currentPassword, newPassword);
+      setShowEditPassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      alert('密碼已更新！');
+    } catch (error: any) {
+      setEditPasswordError(error.message || '更新失敗，請重試');
+    }
+    setEditPasswordLoading(false);
+  };
+
+  const handleLeavePet = async () => {
+    if (!user || !selectedPet) return;
+
+    // Cannot leave if you're the creator
+    if (selectedPet.createdBy === user.uid) {
+      alert('建立者無法退出照顧');
+      return;
+    }
+
+    // First confirmation
+    if (!window.confirm(`確定要退出照顧「${selectedPet.name}」嗎？`)) {
+      return;
+    }
+
+    // Second confirmation
+    if (!window.confirm('退出後將無法再查看此寵物的照顧紀錄，確定要繼續嗎？')) {
+      return;
+    }
+
+    // Third confirmation
+    if (!window.confirm('這是最後確認！按下確定後將立即退出，您需要重新申請才能再次加入照顧。')) {
+      return;
+    }
+
+    try {
+      await removeOwnerFromPet(selectedPet.id, user.uid);
+
+      // Remove the pet from local state
+      const newPets = pets.filter(p => p.id !== selectedPet.id);
+      setPets(newPets);
+
+      if (newPets.length > 0) {
+        setSelectedPetId(newPets[0].id);
+        const owners = await getPetOwners(newPets[0].id);
+        setPetOwners(owners);
+      } else {
+        setSelectedPetId(null);
+        setPetOwners([]);
+      }
+
+      alert('已成功退出照顧');
+
+      // If no more pets, redirect to onboarding
+      if (newPets.length === 0) {
+        navigate('/onboarding');
+      }
+    } catch (error: any) {
+      alert(error.message || '退出失敗，請重試');
+    }
   };
 
   if (isLoading) {
@@ -467,6 +640,7 @@ export const Settings: React.FC = () => {
               )}
             </div>
 
+            {/* Initial setup form (when not linked) */}
             {showLinkEmail && !linkedProviders.includes('password') && (
               <div className="mt-4 space-y-3 pt-4 border-t border-stone-200">
                 {linkError && (
@@ -501,6 +675,165 @@ export const Settings: React.FC = () => {
                 >
                   確認設定
                 </button>
+              </div>
+            )}
+
+            {/* Edit options (when already linked) */}
+            {linkedProviders.includes('password') && (
+              <div className="mt-4 space-y-3 pt-4 border-t border-stone-200">
+                {/* Edit Email */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-stone-600">電子郵件</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-stone-500">{user?.email}</span>
+                    <button
+                      onClick={() => {
+                        setShowEditEmail(!showEditEmail);
+                        setShowEditPassword(false);
+                        setEditEmailError('');
+                      }}
+                      className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {showEditEmail && (
+                  <div className="space-y-3 p-3 bg-white rounded-lg border border-stone-200">
+                    {editEmailError && (
+                      <p className="text-red-500 text-sm">{editEmailError}</p>
+                    )}
+                    <input
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="新的電子郵件"
+                      className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    />
+                    <div className="relative">
+                      <input
+                        type={showEditEmailPassword ? 'text' : 'password'}
+                        value={editEmailPassword}
+                        onChange={(e) => setEditEmailPassword(e.target.value)}
+                        placeholder="目前密碼（驗證身份）"
+                        className="w-full px-3 py-2 pr-10 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEditEmailPassword(!showEditEmailPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-400"
+                      >
+                        {showEditEmailPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleUpdateEmail}
+                        disabled={editEmailLoading}
+                        className="flex-1 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {editEmailLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                        確認修改
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowEditEmail(false);
+                          setNewEmail('');
+                          setEditEmailPassword('');
+                          setEditEmailError('');
+                        }}
+                        className="px-4 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Edit Password */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-stone-600">密碼</span>
+                  <button
+                    onClick={() => {
+                      setShowEditPassword(!showEditPassword);
+                      setShowEditEmail(false);
+                      setEditPasswordError('');
+                    }}
+                    className="px-3 py-1.5 bg-stone-100 text-stone-600 rounded-lg text-sm font-medium hover:bg-stone-200 transition-colors"
+                  >
+                    修改密碼
+                  </button>
+                </div>
+
+                {showEditPassword && (
+                  <div className="space-y-3 p-3 bg-white rounded-lg border border-stone-200">
+                    {editPasswordError && (
+                      <p className="text-red-500 text-sm">{editPasswordError}</p>
+                    )}
+                    <div className="relative">
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="目前密碼"
+                        className="w-full px-3 py-2 pr-10 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-400"
+                      >
+                        {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="新密碼（至少 6 個字元）"
+                        className="w-full px-3 py-2 pr-10 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-stone-400"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      placeholder="確認新密碼"
+                      className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleUpdatePassword}
+                        disabled={editPasswordLoading}
+                        className="flex-1 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {editPasswordLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                        確認修改
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowEditPassword(false);
+                          setCurrentPassword('');
+                          setNewPassword('');
+                          setConfirmNewPassword('');
+                          setEditPasswordError('');
+                        }}
+                        className="px-4 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -565,6 +898,8 @@ export const Settings: React.FC = () => {
                   setPetNameInput(pet.name);
                   setPetBirthdayInput(pet.birthday);
                   setPetAdoptionDateInput(pet.adoptionDate);
+                  setPetTypeInput(pet.type);
+                  setPetGenderInput(pet.gender);
                 }}
                 className={`px-4 py-2 rounded-xl border-2 transition-all flex items-center gap-2 ${
                   selectedPetId === pet.id
@@ -661,9 +996,87 @@ export const Settings: React.FC = () => {
             {/* Pet Type */}
             <div className="flex items-center justify-between">
               <span className="text-stone-600">類別</span>
-              <span className="font-medium text-stone-700">
-                {PET_TYPE_ICONS[selectedPet.type]} {PET_TYPE_LABELS[selectedPet.type]}
-              </span>
+              {editingPetType ? (
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {(['cat', 'dog', 'fish', 'duck', 'rabbit', 'mouse', 'lizard'] as PetType[]).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => handleUpdatePetType(type)}
+                      disabled={isSaving}
+                      className={`px-2 py-1 rounded-lg border-2 transition-all text-sm ${
+                        petTypeInput === type
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-stone-200 hover:border-stone-300'
+                      }`}
+                    >
+                      {PET_TYPE_ICONS[type]} {PET_TYPE_LABELS[type]}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      setEditingPetType(false);
+                      setPetTypeInput(selectedPet.type);
+                    }}
+                    className="p-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-stone-700">
+                    {PET_TYPE_ICONS[selectedPet.type]} {PET_TYPE_LABELS[selectedPet.type]}
+                  </span>
+                  <button
+                    onClick={() => setEditingPetType(true)}
+                    className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Pet Gender */}
+            <div className="flex items-center justify-between">
+              <span className="text-stone-600">性別</span>
+              {editingPetGender ? (
+                <div className="flex items-center gap-2">
+                  {(['male', 'female', 'unknown'] as PetGender[]).map((gender) => (
+                    <button
+                      key={gender}
+                      onClick={() => handleUpdatePetGender(gender)}
+                      disabled={isSaving}
+                      className={`px-3 py-1 rounded-lg border-2 transition-all text-sm ${
+                        petGenderInput === gender
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-stone-200 hover:border-stone-300'
+                      }`}
+                    >
+                      {PET_GENDER_LABELS[gender]}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      setEditingPetGender(false);
+                      setPetGenderInput(selectedPet.gender);
+                    }}
+                    className="p-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-stone-700">{PET_GENDER_LABELS[selectedPet.gender]}</span>
+                  <button
+                    onClick={() => setEditingPetGender(true)}
+                    className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Pet Birthday */}
@@ -774,22 +1187,26 @@ export const Settings: React.FC = () => {
                 >
                   {owner.displayName.charAt(0).toUpperCase()}
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="font-medium text-stone-800">{owner.displayName}</p>
                   <p className="text-sm text-stone-500">{owner.email}</p>
                 </div>
-                {owner.id === selectedPet.createdBy && (
-                  <span className="ml-auto px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
-                    建立者
-                  </span>
+                {/* Show exit button for current user (if not creator) */}
+                {owner.id === user?.uid && selectedPet.createdBy !== user?.uid && (
+                  <button
+                    onClick={handleLeavePet}
+                    className="ml-auto px-3 py-1.5 bg-red-50 text-red-600 text-xs rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center gap-1"
+                  >
+                    <UserMinus className="w-3.5 h-3.5" />
+                    退出
+                  </button>
                 )}
               </div>
             ))}
           </div>
 
-          {/* Add Owner - Only visible to pet creator */}
-          {selectedPet.createdBy === user?.uid && (
-            <div className="mt-4 pt-4 border-t border-stone-100">
+          {/* Add Owner - All caregivers can add new caregivers */}
+          <div className="mt-4 pt-4 border-t border-stone-100">
               {!showAddOwner ? (
                 <button
                   onClick={() => setShowAddOwner(true)}
@@ -838,7 +1255,6 @@ export const Settings: React.FC = () => {
                 </div>
               )}
             </div>
-          )}
         </section>
       )}
 
@@ -877,7 +1293,7 @@ export const Settings: React.FC = () => {
       )}
 
       <div className="text-center text-xs text-stone-300 mt-8">
-        小賀Log v2.0.0
+        PetLog v2.0.0
       </div>
 
       {/* Click outside to close color picker */}
