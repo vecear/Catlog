@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, X, Palette, Edit2, Check, User, Cat, LogOut, Link, Mail, Users, Copy, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, X, Palette, Edit2, Check, User, Cat, LogOut, Link, Mail, Users, Copy, CheckCircle, XCircle, Eye, EyeOff, Database, UserPlus, Loader2 } from 'lucide-react';
 import {
   getUserPets,
   updatePet,
   getPetOwners,
   getCareRequestsForOwner,
   respondToCareRequest,
-  updateUserProfile
+  updateUserProfile,
+  getUserByEmail,
+  addOwnerToPet
 } from '../services/storage';
 import { logout, linkGoogleAccount, linkEmailPassword, getLinkedProviders } from '../services/auth';
 import { useAuth } from '../context/AuthContext';
@@ -41,12 +43,20 @@ export const Settings: React.FC = () => {
   const [petNameInput, setPetNameInput] = useState('');
   const [editingPetBirthday, setEditingPetBirthday] = useState(false);
   const [petBirthdayInput, setPetBirthdayInput] = useState('');
+  const [editingPetAdoptionDate, setEditingPetAdoptionDate] = useState(false);
+  const [petAdoptionDateInput, setPetAdoptionDateInput] = useState('');
   const [editingDisplayName, setEditingDisplayName] = useState(false);
   const [displayNameInput, setDisplayNameInput] = useState('');
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   // Copy ID state
   const [copiedId, setCopiedId] = useState(false);
+
+  // Add owner state
+  const [showAddOwner, setShowAddOwner] = useState(false);
+  const [addOwnerEmail, setAddOwnerEmail] = useState('');
+  const [addOwnerLoading, setAddOwnerLoading] = useState(false);
+  const [addOwnerError, setAddOwnerError] = useState('');
 
   useEffect(() => {
     loadData();
@@ -67,6 +77,7 @@ export const Settings: React.FC = () => {
         setPetOwners(owners);
         setPetNameInput(userPets[0].name);
         setPetBirthdayInput(userPets[0].birthday);
+        setPetAdoptionDateInput(userPets[0].adoptionDate);
       }
 
       // Load care requests
@@ -119,6 +130,20 @@ export const Settings: React.FC = () => {
       await updatePet(selectedPet.id, { birthday: petBirthdayInput });
       setPets(pets.map(p => p.id === selectedPet.id ? { ...p, birthday: petBirthdayInput } : p));
       setEditingPetBirthday(false);
+    } catch (error) {
+      alert('儲存失敗，請重試');
+    }
+    setIsSaving(false);
+  };
+
+  const handleUpdatePetAdoptionDate = async () => {
+    if (!selectedPet || !petAdoptionDateInput) return;
+
+    setIsSaving(true);
+    try {
+      await updatePet(selectedPet.id, { adoptionDate: petAdoptionDateInput });
+      setPets(pets.map(p => p.id === selectedPet.id ? { ...p, adoptionDate: petAdoptionDateInput } : p));
+      setEditingPetAdoptionDate(false);
     } catch (error) {
       alert('儲存失敗，請重試');
     }
@@ -209,6 +234,55 @@ export const Settings: React.FC = () => {
     } catch (error: any) {
       alert(error.message || '操作失敗，請重試');
     }
+  };
+
+  const handleAddOwner = async () => {
+    if (!selectedPet || !addOwnerEmail.trim()) {
+      setAddOwnerError('請輸入電子郵件');
+      return;
+    }
+
+    setAddOwnerLoading(true);
+    setAddOwnerError('');
+
+    try {
+      // Find user by email
+      const targetUser = await getUserByEmail(addOwnerEmail.trim());
+      if (!targetUser) {
+        setAddOwnerError('找不到此用戶，請確認對方已註冊並登入過');
+        setAddOwnerLoading(false);
+        return;
+      }
+
+      // Check if already an owner
+      if (selectedPet.ownerIds.includes(targetUser.id)) {
+        setAddOwnerError('此用戶已經是照顧者');
+        setAddOwnerLoading(false);
+        return;
+      }
+
+      // Add owner to pet
+      await addOwnerToPet(selectedPet.id, targetUser.id);
+
+      // Refresh owners list
+      const owners = await getPetOwners(selectedPet.id);
+      setPetOwners(owners);
+
+      // Update local pet state
+      setPets(pets.map(p =>
+        p.id === selectedPet.id
+          ? { ...p, ownerIds: [...p.ownerIds, targetUser.id] }
+          : p
+      ));
+
+      setShowAddOwner(false);
+      setAddOwnerEmail('');
+      alert(`已成功將 ${targetUser.displayName || targetUser.email} 加入照顧者！`);
+    } catch (error: any) {
+      setAddOwnerError(error.message || '新增失敗，請重試');
+    }
+
+    setAddOwnerLoading(false);
   };
 
   if (isLoading) {
@@ -490,6 +564,7 @@ export const Settings: React.FC = () => {
                   setSelectedPetId(pet.id);
                   setPetNameInput(pet.name);
                   setPetBirthdayInput(pet.birthday);
+                  setPetAdoptionDateInput(pet.adoptionDate);
                 }}
                 className={`px-4 py-2 rounded-xl border-2 transition-all flex items-center gap-2 ${
                   selectedPetId === pet.id
@@ -636,7 +711,43 @@ export const Settings: React.FC = () => {
             {/* Adoption Date */}
             <div className="flex items-center justify-between">
               <span className="text-stone-600">來家裡的日子</span>
-              <span className="font-medium text-stone-500">{selectedPet.adoptionDate}</span>
+              {editingPetAdoptionDate ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={petAdoptionDateInput}
+                    onChange={(e) => setPetAdoptionDateInput(e.target.value)}
+                    className="px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleUpdatePetAdoptionDate}
+                    disabled={isSaving}
+                    className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingPetAdoptionDate(false);
+                      setPetAdoptionDateInput(selectedPet.adoptionDate);
+                    }}
+                    className="p-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-stone-500">{selectedPet.adoptionDate}</span>
+                  <button
+                    onClick={() => setEditingPetAdoptionDate(true)}
+                    className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -675,6 +786,59 @@ export const Settings: React.FC = () => {
               </div>
             ))}
           </div>
+
+          {/* Add Owner - Only visible to pet creator */}
+          {selectedPet.createdBy === user?.uid && (
+            <div className="mt-4 pt-4 border-t border-stone-100">
+              {!showAddOwner ? (
+                <button
+                  onClick={() => setShowAddOwner(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 text-green-600 font-medium bg-green-50 rounded-xl hover:bg-green-100 transition-colors"
+                >
+                  <UserPlus className="w-5 h-5" />
+                  新增照顧者
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-stone-500">輸入對方的電子郵件（對方需先註冊並登入過）</p>
+                  {addOwnerError && (
+                    <p className="text-sm text-red-500">{addOwnerError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={addOwnerEmail}
+                      onChange={(e) => setAddOwnerEmail(e.target.value)}
+                      placeholder="輸入電子郵件"
+                      className="flex-1 px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-300"
+                      disabled={addOwnerLoading}
+                    />
+                    <button
+                      onClick={handleAddOwner}
+                      disabled={addOwnerLoading}
+                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {addOwnerLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddOwner(false);
+                        setAddOwnerEmail('');
+                        setAddOwnerError('');
+                      }}
+                      className="px-4 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       )}
 
@@ -688,6 +852,26 @@ export const Settings: React.FC = () => {
             className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-colors"
           >
             新增寵物
+          </button>
+        </section>
+      )}
+
+      {/* Data Migration Section - Only visible to admin (CCL) */}
+      {(userProfile?.email === 'vecear@gmail.com' || userProfile?.displayName === 'CCL') && (
+        <section className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
+          <h3 className="text-lg font-bold text-stone-700 mb-4 flex items-center gap-2">
+            <Database className="w-5 h-5 text-amber-500" />
+            資料工具
+          </h3>
+          <button
+            onClick={() => navigate('/migrate')}
+            className="w-full p-4 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-all flex items-center gap-3 text-left"
+          >
+            <Database className="w-6 h-6 text-amber-600" />
+            <div>
+              <p className="font-bold text-amber-800">資料遷移工具</p>
+              <p className="text-sm text-amber-600">遷移舊資料或更新原有主人資料</p>
+            </div>
           </button>
         </section>
       )}

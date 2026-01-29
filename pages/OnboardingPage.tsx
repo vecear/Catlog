@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { logout } from '../services/auth';
 import { completeOnboarding, createPet, getPet, createCareRequest, updateUserProfile } from '../services/storage';
 import { PetType, PetGender, PET_TYPE_LABELS, PET_TYPE_ICONS, PET_GENDER_LABELS } from '../types';
-import { User, PawPrint, Plus, Users, ArrowRight, ArrowLeft, Check, Search, Sparkles } from 'lucide-react';
+import { User, PawPrint, Plus, Users, ArrowRight, ArrowLeft, Check, Search, Sparkles, Database, LogOut } from 'lucide-react';
 
 type OnboardingStep = 'displayName' | 'petChoice' | 'addPet' | 'joinPet' | 'joinPetConfirm';
 
@@ -30,12 +31,32 @@ export const OnboardingPage: React.FC = () => {
     const [foundPet, setFoundPet] = useState<any>(null);
 
     useEffect(() => {
-        if (!isAuthenticated) {
-            navigate('/login');
-        } else if (!needsOnboarding && userProfile?.onboardingComplete) {
-            navigate('/');
-        }
-    }, [isAuthenticated, needsOnboarding, userProfile, navigate]);
+        const checkUserStatus = async () => {
+            if (!isAuthenticated) {
+                navigate('/login');
+                return;
+            }
+
+            if (!needsOnboarding && userProfile?.onboardingComplete) {
+                navigate('/');
+                return;
+            }
+
+            // Check if user already has pets (from migration) but onboarding not complete
+            if (user && userProfile && userProfile.petIds && userProfile.petIds.length > 0 && !userProfile.onboardingComplete) {
+                // User has pets but onboarding not marked complete, fix it and redirect
+                try {
+                    await completeOnboarding(user.uid, userProfile.displayName || user.email?.split('@')[0] || 'User');
+                    await refreshUserProfile();
+                    navigate('/');
+                } catch (err) {
+                    console.error('Error completing onboarding:', err);
+                }
+            }
+        };
+
+        checkUserStatus();
+    }, [isAuthenticated, needsOnboarding, userProfile, user, navigate, refreshUserProfile]);
 
     const handleDisplayNameSubmit = async () => {
         if (!displayName.trim()) {
@@ -50,6 +71,17 @@ export const OnboardingPage: React.FC = () => {
         try {
             await updateUserProfile(user.uid, { displayName: displayName.trim() });
             await refreshUserProfile();
+
+            // Check if user already has pets (from migration)
+            const updatedProfile = await import('../services/storage').then(m => m.getUserProfile(user.uid));
+            if (updatedProfile && updatedProfile.petIds && updatedProfile.petIds.length > 0) {
+                // User already has pets, complete onboarding and go to home
+                await completeOnboarding(user.uid, displayName.trim());
+                await refreshUserProfile();
+                navigate('/');
+                return;
+            }
+
             setStep('petChoice');
         } catch (err: any) {
             setError(err.message || '更新失敗，請重試');
@@ -190,6 +222,17 @@ export const OnboardingPage: React.FC = () => {
                                 </>
                             )}
                         </button>
+
+                        <button
+                            onClick={async () => {
+                                await logout();
+                                navigate('/login');
+                            }}
+                            className="w-full py-2 text-gray-500 hover:text-gray-700 transition-colors flex items-center justify-center gap-2 mt-4"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            返回登入頁面
+                        </button>
                     </div>
                 );
 
@@ -239,6 +282,20 @@ export const OnboardingPage: React.FC = () => {
                             <ArrowLeft className="w-4 h-4" />
                             返回上一步
                         </button>
+
+                        {/* Migration link for existing users */}
+                        <div className="border-t border-gray-100 pt-4 mt-4">
+                            <Link
+                                to="/migrate"
+                                className="w-full p-3 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-all flex items-center gap-3 text-left"
+                            >
+                                <Database className="w-5 h-5 text-amber-600" />
+                                <div>
+                                    <p className="font-medium text-amber-800 text-sm">已有舊資料？</p>
+                                    <p className="text-xs text-amber-600">點此遷移小賀的照顧紀錄</p>
+                                </div>
+                            </Link>
+                        </div>
                     </div>
                 );
 

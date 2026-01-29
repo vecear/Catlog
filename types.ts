@@ -138,6 +138,7 @@ export interface Pet {
   gender: PetGender;
   adoptionDate: string; // YYYY-MM-DD - when pet joined the family
   ownerIds: string[]; // Array of user IDs who can care for this pet
+  legacyOwners?: Owner[]; // Legacy owners without Firebase accounts (from migration)
   createdBy: string; // User ID who created this pet
   createdAt: number; // timestamp
   actionOrder?: string[];

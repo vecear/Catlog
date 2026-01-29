@@ -5,6 +5,7 @@ import { PetProvider } from './context/PetContext';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { OnboardingPage } from './pages/OnboardingPage';
+import { MigratePage } from './pages/MigratePage';
 import { PrivateRoute } from './components/PrivateRoute';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
@@ -19,6 +20,14 @@ const App: React.FC = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route
+            path="/migrate"
+            element={
+              <PrivateRoute skipOnboardingCheck>
+                <MigratePage />
+              </PrivateRoute>
+            }
+          />
           <Route
             path="/*"
             element={

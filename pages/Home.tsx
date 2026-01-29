@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug } from 'lucide-react';
+import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug, Clock } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
-import { CareLog, UserProfile, PET_TYPE_ICONS } from '../types';
+import { CareLog, UserProfile, CareRequest, PET_TYPE_ICONS } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { usePet } from '../context/PetContext';
+import { getPendingCareRequestsForUser } from '../services/storage';
 
 
 export const Home: React.FC = () => {
@@ -15,12 +16,24 @@ export const Home: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<CareRequest[]>([]);
 
   const fetchData = async () => {
     setIsRefreshing(true);
     await Promise.all([refreshLogs(), refreshTodayStatus()]);
     setTimeout(() => setIsRefreshing(false), 500);
   };
+
+  // Check for pending care requests if no pet
+  useEffect(() => {
+    const checkPendingRequests = async () => {
+      if (!selectedPet && user) {
+        const requests = await getPendingCareRequestsForUser(user.uid);
+        setPendingRequests(requests);
+      }
+    };
+    checkPendingRequests();
+  }, [selectedPet, user]);
 
   useEffect(() => {
     if (selectedPet) {
@@ -330,6 +343,34 @@ export const Home: React.FC = () => {
   }
 
   if (!selectedPet) {
+    // Check if user has pending care requests
+    if (pendingRequests.length > 0) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+            <Clock className="w-10 h-10 text-amber-500" />
+          </div>
+          <h2 className="text-xl font-bold text-stone-700 mb-2">等待審核中</h2>
+          <p className="text-stone-500 mb-6 text-center">
+            您已申請加入照顧「{pendingRequests[0].petName}」<br />
+            請等待原照顧者審核
+          </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+            <p className="text-sm text-amber-700">
+              申請時間：{new Date(pendingRequests[0].createdAt).toLocaleDateString('zh-TW')}
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-6 flex items-center gap-2 text-stone-500 hover:text-stone-700"
+          >
+            <RefreshCw className="w-4 h-4" />
+            重新整理
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="text-6xl mb-4">🐾</div>

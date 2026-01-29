@@ -5,9 +5,10 @@ import { Loader2 } from 'lucide-react';
 
 interface PrivateRouteProps {
     children: React.ReactNode;
+    skipOnboardingCheck?: boolean;
 }
 
-export const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+export const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, skipOnboardingCheck = false }) => {
     const { loading, isAuthenticated, needsOnboarding } = useAuth();
 
     if (loading) {
@@ -23,8 +24,8 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
         return <Navigate to="/login" replace />;
     }
 
-    // If logged in but needs onboarding, redirect to onboarding
-    if (needsOnboarding) {
+    // If logged in but needs onboarding, redirect to onboarding (unless skipped)
+    if (needsOnboarding && !skipOnboardingCheck) {
         return <Navigate to="/onboarding" replace />;
     }
 

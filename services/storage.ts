@@ -364,6 +364,21 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   }
 };
 
+// Find user by email
+export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
+  try {
+    const q = query(collection(db, USERS_COLLECTION), where('email', '==', email.toLowerCase().trim()));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      return querySnapshot.docs[0].data() as UserProfile;
+    }
+    return null;
+  } catch (e) {
+    console.error("Failed to find user by email", e);
+    return null;
+  }
+};
+
 export const createUserProfile = async (userId: string, email: string, linkedProviders: ('google' | 'password')[]): Promise<UserProfile> => {
   try {
     const now = Date.now();
@@ -563,12 +578,36 @@ export const getPetOwners = async (petId: string): Promise<UserProfile[]> => {
     }
 
     const owners: UserProfile[] = [];
+
+    // Add Firebase user owners
     for (const ownerId of pet.ownerIds) {
       const owner = await getUserProfile(ownerId);
       if (owner) {
         owners.push(owner);
       }
     }
+
+    // Add legacy owners (converted to UserProfile-like objects)
+    if (pet.legacyOwners && pet.legacyOwners.length > 0) {
+      for (const legacyOwner of pet.legacyOwners) {
+        // Check if there's already an owner with the same display name (avoid duplicates)
+        const existingOwner = owners.find(o => o.displayName === legacyOwner.name);
+        if (!existingOwner) {
+          owners.push({
+            id: legacyOwner.id,
+            displayName: legacyOwner.name,
+            email: '',
+            color: legacyOwner.color,
+            linkedProviders: [],
+            petIds: [petId],
+            onboardingComplete: true,
+            createdAt: 0,
+            updatedAt: 0,
+          });
+        }
+      }
+    }
+
     return owners;
   } catch (e) {
     console.error("Failed to get pet owners", e);
@@ -633,14 +672,18 @@ export const createCareRequest = async (
 
 export const getCareRequestsForOwner = async (ownerId: string): Promise<CareRequest[]> => {
   try {
+    // Simple query without composite index requirement
     const q = query(
       collection(db, CARE_REQUESTS_COLLECTION),
-      where('ownerId', '==', ownerId),
-      where('status', '==', 'pending'),
-      orderBy('createdAt', 'desc')
+      where('ownerId', '==', ownerId)
     );
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data() as CareRequest);
+    const requests = querySnapshot.docs.map(doc => doc.data() as CareRequest);
+
+    // Filter pending requests and sort in memory
+    return requests
+      .filter(r => r.status === 'pending')
+      .sort((a, b) => b.createdAt - a.createdAt);
   } catch (e) {
     console.error("Failed to get care requests for owner", e);
     return [];
@@ -649,13 +692,36 @@ export const getCareRequestsForOwner = async (ownerId: string): Promise<CareRequ
 
 export const getCareRequestsForPet = async (petId: string): Promise<CareRequest[]> => {
   try {
+    // Simple query without composite index requirement
     const q = query(
       collection(db, CARE_REQUESTS_COLLECTION),
-      where('petId', '==', petId),
-      orderBy('createdAt', 'desc')
+      where('petId', '==', petId)
     );
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data() as CareRequest);
+    const requests = querySnapshot.docs.map(doc => doc.data() as CareRequest);
+
+    // Sort in memory
+    return requests.sort((a, b) => b.createdAt - a.createdAt);
+  } catch (e) {
+    console.error("Failed to get care requests for pet", e);
+    return [];
+  }
+};
+
+// Get pending care requests submitted by a user
+export const getPendingCareRequestsForUser = async (userId: string): Promise<CareRequest[]> => {
+  try {
+    const q = query(
+      collection(db, CARE_REQUESTS_COLLECTION),
+      where('requesterId', '==', userId)
+    );
+    const querySnapshot = await getDocs(q);
+    const requests = querySnapshot.docs.map(doc => doc.data() as CareRequest);
+
+    // Filter pending and sort
+    return requests
+      .filter(r => r.status === 'pending')
+      .sort((a, b) => b.createdAt - a.createdAt);
   } catch (e) {
     console.error("Failed to get care requests for pet", e);
     return [];
