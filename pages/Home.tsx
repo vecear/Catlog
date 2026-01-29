@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug, Clock, LogOut, User, Cat, ListChecks } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
-import { CareLog, UserProfile, CareRequest, PET_TYPE_ICONS, HomeCardSettings, DEFAULT_HOME_CARD_SETTINGS } from '../types';
+import { CareLog, UserProfile, CareRequest, HomeCardSettings, DEFAULT_HOME_CARD_SETTINGS } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { usePet } from '../context/PetContext';
@@ -519,7 +519,6 @@ export const Home: React.FC = () => {
   }
 
   const petName = selectedPet.name;
-  const petIcon = PET_TYPE_ICONS[selectedPet.type] || '🐾';
 
   return (
     <div className="space-y-6 md:space-y-8 animate-fade-in">
@@ -530,11 +529,11 @@ export const Home: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-stone-600 tracking-tight">
               {selectedPet.adoptionDate ? (
                 <>
-                  有<span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block ${petNameAnimation} ${petNameHidden ? 'invisible' : ''}`} onClick={handlePetNameClick}>{petName}{petIcon}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
+                  有<span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block text-[1.25em] ${petNameAnimation} ${petNameHidden ? 'invisible' : ''}`} onClick={handlePetNameClick}>{petName}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
                 </>
               ) : (
                 <>
-                  <span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block ${petNameAnimation} ${petNameHidden ? 'invisible' : ''}`} onClick={handlePetNameClick}>{petName}{petIcon}</span>的生活
+                  <span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block text-[1.25em] ${petNameAnimation} ${petNameHidden ? 'invisible' : ''}`} onClick={handlePetNameClick}>{petName}</span>的生活
                 </>
               )}
             </h1>
@@ -1060,7 +1059,7 @@ export const Home: React.FC = () => {
       </section >
 
       {/* Spacer for floating action button */}
-      <div className="h-24" />
+      <div className="h-12" />
 
       {/* Floating Action Button */}
       <div className="fixed bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
