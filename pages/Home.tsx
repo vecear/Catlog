@@ -19,6 +19,45 @@ export const Home: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<CareRequest[]>([]);
 
+  // Pet sound animation state
+  const [petSounds, setPetSounds] = useState<Array<{ id: number; text: string; x: number; y: number }>>([]);
+
+  // Pet type to base sound mapping
+  const petSoundMap: Record<string, string> = {
+    cat: '喵',
+    dog: '汪',
+    duck: '呱',
+    fish: '啵',
+    rabbit: '嚼',
+    mouse: '吱',
+    lizard: '嘶',
+  };
+
+  const generatePetSound = (petType: string) => {
+    // Special case for cat: sometimes purr
+    if (petType === 'cat' && Math.random() < 0.3) {
+      const purrCount = Math.floor(Math.random() * 2) + 1; // 1-2 times
+      return '呼嚕'.repeat(purrCount) + '~';
+    }
+    const baseSound = petSoundMap[petType] || '喵';
+    const punctuations = ['~', '!', '~!', '!!', '~~~', '!~'];
+    const repeatCount = Math.floor(Math.random() * 3) + 1; // 1-3 times
+    const punctuation = punctuations[Math.floor(Math.random() * punctuations.length)];
+    return baseSound.repeat(repeatCount) + punctuation;
+  };
+
+  const handlePetNameClick = () => {
+    const petType = selectedPet?.type || 'cat';
+    const randomSound = generatePetSound(petType);
+    const x = Math.random() * 60 + 20;
+    const y = Math.random() * 40 + 10;
+    const id = Date.now();
+    setPetSounds(prev => [...prev, { id, text: randomSound, x, y }]);
+    setTimeout(() => {
+      setPetSounds(prev => prev.filter(s => s.id !== id));
+    }, 2500);
+  };
+
   const fetchData = async () => {
     setIsRefreshing(true);
     await Promise.all([refreshLogs(), refreshTodayStatus()]);
@@ -409,11 +448,11 @@ export const Home: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-stone-600 tracking-tight">
               {selectedPet.adoptionDate ? (
                 <>
-                  有<span className="text-amber-600 font-black">{petName}{petIcon}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
+                  有<span className="text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block" onClick={handlePetNameClick}>{petName}{petIcon}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
                 </>
               ) : (
                 <>
-                  <span className="text-amber-600 font-black">{petName}{petIcon}</span>的生活
+                  <span className="text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block" onClick={handlePetNameClick}>{petName}{petIcon}</span>的生活
                 </>
               )}
             </h1>
@@ -885,6 +924,17 @@ export const Home: React.FC = () => {
           <span className="font-bold text-lg">紀錄一下</span>
         </button>
       </div>
+
+      {/* Pet sound animations */}
+      {petSounds.map(sound => (
+        <div
+          key={sound.id}
+          className="fixed pointer-events-none z-50 animate-[fadeUp_2.5s_ease-out_forwards]"
+          style={{ left: `${sound.x}%`, top: `${sound.y}%` }}
+        >
+          <span className="text-amber-500/70 font-bold text-2xl drop-shadow-sm">{sound.text}</span>
+        </div>
+      ))}
     </div >
   );
 };

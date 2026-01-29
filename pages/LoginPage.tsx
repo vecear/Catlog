@@ -25,12 +25,24 @@ export const LoginPage: React.FC = () => {
     // Pet sound animation state - array to support multiple simultaneous sounds
     const [petSounds, setPetSounds] = useState<Array<{ id: number; text: string; x: number; y: number }>>([]);
 
+    const generateRandomPetSound = () => {
+        // Sometimes generate purring sound
+        if (Math.random() < 0.15) {
+            const purrCount = Math.floor(Math.random() * 2) + 1;
+            return '呼嚕'.repeat(purrCount) + '~';
+        }
+        const baseSounds = ['喵', '汪', '呱', '啵', '嚼', '吱', '嘶'];
+        const punctuations = ['~', '!', '~!', '!!', '~~~', '!~'];
+        const baseSound = baseSounds[Math.floor(Math.random() * baseSounds.length)];
+        const repeatCount = Math.floor(Math.random() * 3) + 1;
+        const punctuation = punctuations[Math.floor(Math.random() * punctuations.length)];
+        return baseSound.repeat(repeatCount) + punctuation;
+    };
+
     const handleLogoClick = () => {
-        const sounds = ['喵~', '喵喵!', '汪!', '汪汪~', '嗚~', '呼嚕呼嚕'];
-        const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
-        // Random position within the viewport
-        const x = Math.random() * 60 + 20; // 20% to 80% from left
-        const y = Math.random() * 40 + 20; // 20% to 60% from top
+        const randomSound = generateRandomPetSound();
+        const x = Math.random() * 60 + 20;
+        const y = Math.random() * 40 + 20;
         const id = Date.now();
         setPetSounds(prev => [...prev, { id, text: randomSound, x, y }]);
         setTimeout(() => {
