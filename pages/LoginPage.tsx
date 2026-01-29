@@ -112,8 +112,11 @@ export const LoginPage: React.FC = () => {
             {/* Right side - Login form */}
             <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center lg:justify-start px-4 pt-2 pb-4 lg:p-8 lg:pl-0">
                 <div className="w-full max-w-md">
-                    {/* Mobile only - Logo */}
-                    <div className="lg:hidden mb-4 h-24">
+                    {/* Mobile only - Logo (click to refresh) */}
+                    <div
+                        className="lg:hidden mb-4 h-24 cursor-pointer active:scale-95 transition-transform"
+                        onClick={() => window.location.reload()}
+                    >
                         <img
                             src="/Catlog/banner_logo.png"
                             alt="PetLog Logo"
