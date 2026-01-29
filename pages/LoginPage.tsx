@@ -22,6 +22,22 @@ export const LoginPage: React.FC = () => {
     const [forgotSuccess, setForgotSuccess] = useState('');
     const [forgotLoading, setForgotLoading] = useState(false);
 
+    // Pet sound animation state - array to support multiple simultaneous sounds
+    const [petSounds, setPetSounds] = useState<Array<{ id: number; text: string; x: number; y: number }>>([]);
+
+    const handleLogoClick = () => {
+        const sounds = ['喵~', '喵喵!', '汪!', '汪汪~', '嗚~', '呼嚕呼嚕'];
+        const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+        // Random position within the viewport
+        const x = Math.random() * 60 + 20; // 20% to 80% from left
+        const y = Math.random() * 40 + 20; // 20% to 60% from top
+        const id = Date.now();
+        setPetSounds(prev => [...prev, { id, text: randomSound, x, y }]);
+        setTimeout(() => {
+            setPetSounds(prev => prev.filter(s => s.id !== id));
+        }, 2500);
+    };
+
     useEffect(() => {
         if (isAuthenticated) {
             if (needsOnboarding) {
@@ -112,10 +128,10 @@ export const LoginPage: React.FC = () => {
             {/* Right side - Login form */}
             <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center lg:justify-start px-4 pt-2 pb-4 lg:p-8 lg:pl-0">
                 <div className="w-full max-w-md">
-                    {/* Mobile only - Logo (click to refresh) */}
+                    {/* Mobile only - Logo (click for pet sound) */}
                     <div
-                        className="lg:hidden mb-4 h-24 cursor-pointer active:scale-95 transition-transform"
-                        onClick={() => window.location.reload()}
+                        className="lg:hidden mb-4 h-24 cursor-pointer"
+                        onClick={handleLogoClick}
                     >
                         <img
                             src="/Catlog/banner_logo.png"
@@ -123,6 +139,17 @@ export const LoginPage: React.FC = () => {
                             className="h-full w-full object-contain"
                         />
                     </div>
+
+                    {/* Pet sound animations - random positions with fade out */}
+                    {petSounds.map(sound => (
+                        <div
+                            key={sound.id}
+                            className="lg:hidden fixed pointer-events-none z-50 animate-[fadeUp_2.5s_ease-out_forwards]"
+                            style={{ left: `${sound.x}%`, top: `${sound.y}%` }}
+                        >
+                            <span className="text-amber-500/70 font-bold text-2xl drop-shadow-sm">{sound.text}</span>
+                        </div>
+                    ))}
 
                     {/* Login Card */}
                     <div className="relative px-2 py-6 lg:p-0">
