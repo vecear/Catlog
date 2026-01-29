@@ -110,7 +110,7 @@ export const LoginPage: React.FC = () => {
             </div>
 
             {/* Right side - Login form */}
-            <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center lg:justify-start p-4 lg:p-8 lg:pl-0">
+            <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center lg:justify-start px-4 pt-2 pb-4 lg:p-8 lg:pl-0">
                 <div className="w-full max-w-md">
                     {/* Mobile only - Logo */}
                     <div className="lg:hidden mb-4 h-24">
