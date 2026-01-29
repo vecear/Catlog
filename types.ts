@@ -142,6 +142,7 @@ export interface Pet {
   createdBy: string; // User ID who created this pet
   createdAt: number; // timestamp
   actionOrder?: string[];
+  actionLabels?: Record<string, string>; // Custom labels for actions (affects all co-caregivers)
 }
 
 // User profile for the new multi-user system
@@ -155,6 +156,9 @@ export interface UserProfile {
   onboardingComplete: boolean;
   createdAt: number;
   updatedAt: number;
+  actionOrders?: Record<string, string[]>; // Per-pet action order preferences (petId -> order)
+  hiddenActions?: Record<string, string[]>; // Per-pet hidden actions (petId -> hidden action ids)
+  caregiverOrders?: Record<string, string[]>; // Per-pet caregiver order (petId -> array of user IDs)
 }
 
 // Care request for co-caring pets

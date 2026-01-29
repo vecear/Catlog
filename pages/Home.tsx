@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug, Clock, LogOut } from 'lucide-react';
+import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug, Clock, LogOut, User, Cat, ListChecks } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
 import { CareLog, UserProfile, CareRequest, PET_TYPE_ICONS } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
@@ -18,6 +18,10 @@ export const Home: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<CareRequest[]>([]);
+
+  // Settings dropdown state
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
 
   // Pet sound animation state
   const [petSounds, setPetSounds] = useState<Array<{ id: number; text: string; x: number; y: number }>>([]);
@@ -105,6 +109,22 @@ export const Home: React.FC = () => {
       fetchData();
     }
   }, [selectedPet?.id]);
+
+  // Close settings menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(event.target as Node)) {
+        setShowSettingsMenu(false);
+      }
+    };
+
+    if (showSettingsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSettingsMenu]);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -309,6 +329,24 @@ export const Home: React.FC = () => {
   };
   const weekRange = getWeekRange();
 
+  // Sort pet owners based on user's caregiver order preference
+  const sortedPetOwners = useMemo(() => {
+    if (!selectedPet || selectedPetOwners.length === 0) return selectedPetOwners;
+    const userCaregiverOrder = userProfile?.caregiverOrders?.[selectedPet.id];
+    if (!userCaregiverOrder) return selectedPetOwners;
+
+    const sorted = [...selectedPetOwners].sort((a, b) => {
+      const indexA = userCaregiverOrder.indexOf(a.id);
+      const indexB = userCaregiverOrder.indexOf(b.id);
+      // Items not in the order go to the end
+      if (indexA === -1 && indexB === -1) return 0;
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+    return sorted;
+  }, [selectedPet, selectedPetOwners, userProfile?.caregiverOrders]);
+
   // Find winner
   const getWinner = () => {
     if (selectedPetOwners.length === 0) return null;
@@ -496,12 +534,62 @@ export const Home: React.FC = () => {
             >
               <RefreshCw className="w-5 h-5" />
             </button>
-            <button
-              onClick={() => navigate('/settings')}
-              className="p-2 text-stone-400 hover:bg-stone-50 rounded-full transition-colors"
-            >
-              <SettingsIcon className="w-6 h-6" />
-            </button>
+            <div className="relative" ref={settingsMenuRef}>
+              <button
+                onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                className="p-2 text-stone-400 hover:bg-stone-50 rounded-full transition-colors"
+              >
+                <SettingsIcon className="w-6 h-6" />
+              </button>
+              {showSettingsMenu && (
+                <div className="absolute right-0 top-12 bg-white rounded-xl shadow-xl border border-stone-200 py-2 min-w-[160px] z-50 animate-fade-in">
+                  <button
+                    onClick={() => {
+                      setShowSettingsMenu(false);
+                      navigate('/settings/profile');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-stone-700 hover:bg-stone-50 transition-colors"
+                  >
+                    <User className="w-4 h-4 text-blue-500" />
+                    <span className="font-medium text-sm">個人資料</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSettingsMenu(false);
+                      navigate('/settings/pet');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-stone-700 hover:bg-stone-50 transition-colors"
+                  >
+                    <Cat className="w-4 h-4 text-orange-500" />
+                    <span className="font-medium text-sm">寵物資料</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSettingsMenu(false);
+                      navigate('/settings/interface');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-stone-700 hover:bg-stone-50 transition-colors"
+                  >
+                    <ListChecks className="w-4 h-4 text-teal-500" />
+                    <span className="font-medium text-sm">介面設定</span>
+                  </button>
+                  <div className="h-px bg-stone-200 my-2" />
+                  <button
+                    onClick={async () => {
+                      setShowSettingsMenu(false);
+                      if (window.confirm('確定要登出嗎？')) {
+                        await logout();
+                        navigate('/login');
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="font-medium text-sm">登出</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -616,7 +704,7 @@ export const Home: React.FC = () => {
               </h3>
               <p className="text-center text-xs text-stone-400 mb-2">本週給{petName}的愛 ({weekRange})</p>
               <div className="flex justify-center gap-4 items-center text-sm font-medium mb-2 flex-wrap">
-                {selectedPetOwners.map((owner, index) => {
+                {sortedPetOwners.map((owner, index) => {
                   const score = ownerScores[owner.displayName] || 0;
                   const maxScore = Math.max(...Object.values(ownerScores));
                   const isWinning = score === maxScore && score > 0;
@@ -635,7 +723,7 @@ export const Home: React.FC = () => {
               </div>
               <p className="text-center text-xs text-stone-400 mb-1">全部累積總分</p>
               <div className="text-center text-xs text-stone-400 mb-4">
-                {selectedPetOwners.map((owner, index) => (
+                {sortedPetOwners.map((owner, index) => (
                   <span key={owner.id}>
                     {index > 0 && '，'}
                     <span style={{ color: owner.color }} className="font-medium">{owner.displayName}</span>
@@ -668,7 +756,7 @@ export const Home: React.FC = () => {
                       itemStyle={{ fontSize: '12px' }}
                       labelStyle={{ fontSize: '12px', color: '#78716c', marginBottom: '4px' }}
                     />
-                    {selectedPetOwners.map(owner => (
+                    {sortedPetOwners.map(owner => (
                       <Line
                         key={owner.id}
                         type="monotone"
@@ -703,13 +791,20 @@ export const Home: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-              <StatusCard type="food" progress={todayStatus.food} />
-              <StatusCard type="water" progress={todayStatus.water} />
-              <StatusCard type="litter" progress={todayStatus.litter} />
-              <StatusCard type="grooming" progress={todayStatus.grooming} />
-              <StatusCard type="medication" progress={todayStatus.medication} />
-              <StatusCard type="supplements" progress={todayStatus.supplements} />
-              <StatusCard type="weight" progress={todayStatus.weight} />
+              {(userProfile?.actionOrders?.[selectedPet.id] || ['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'deworming', 'bath', 'weight']).map((actionType) => {
+                // Only render StatusCard for supported types
+                const validTypes = ['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'weight'] as const;
+                if (!validTypes.includes(actionType as any)) return null;
+                const type = actionType as typeof validTypes[number];
+                return (
+                  <StatusCard
+                    key={type}
+                    type={type}
+                    progress={todayStatus[type]}
+                    customLabel={selectedPet.actionLabels?.[type]}
+                  />
+                );
+              })}
             </div>
           </section>
         </div>

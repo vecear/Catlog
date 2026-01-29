@@ -10,7 +10,9 @@ import { PrivateRoute } from './components/PrivateRoute';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { AddLog } from './pages/AddLog';
-import { Settings } from './pages/Settings';
+import { ProfileSettings } from './pages/ProfileSettings';
+import { PetSettings } from './pages/PetSettings';
+import { InterfaceSettings } from './pages/InterfaceSettings';
 
 const App: React.FC = () => {
   return (
@@ -38,7 +40,9 @@ const App: React.FC = () => {
                       <Route path="/" element={<Home />} />
                       <Route path="/add" element={<AddLog />} />
                       <Route path="/edit/:id" element={<AddLog />} />
-                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/settings/profile" element={<ProfileSettings />} />
+                      <Route path="/settings/pet" element={<PetSettings />} />
+                      <Route path="/settings/interface" element={<InterfaceSettings />} />
                     </Routes>
                   </Layout>
                 </PetProvider>

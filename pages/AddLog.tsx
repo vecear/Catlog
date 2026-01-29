@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale, ShowerHead, Bug, Leaf } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
@@ -29,7 +29,8 @@ export const AddLog: React.FC = () => {
     const [date, setDate] = useState(defaultDate);
     const [time, setTime] = useState(defaultTime);
     const [author, setAuthor] = useState<string>('');
-    const [actionOrder, setActionOrder] = useState<string[]>(['food', 'water', 'litter', 'grooming', 'medication', 'deworming', 'bath', 'weight']);
+    const [actionOrder, setActionOrder] = useState<string[]>(['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'deworming', 'bath', 'weight']);
+    const [hiddenActions, setHiddenActions] = useState<string[]>([]);
     const [actions, setActions] = useState({
         food: false,
         water: false,
@@ -65,6 +66,24 @@ export const AddLog: React.FC = () => {
         }
     };
 
+    // Sort pet owners based on user's caregiver order preference
+    const sortedPetOwners = useMemo(() => {
+        if (!selectedPet || selectedPetOwners.length === 0) return selectedPetOwners;
+        const userCaregiverOrder = userProfile?.caregiverOrders?.[selectedPet.id];
+        if (!userCaregiverOrder) return selectedPetOwners;
+
+        const sorted = [...selectedPetOwners].sort((a, b) => {
+            const indexA = userCaregiverOrder.indexOf(a.id);
+            const indexB = userCaregiverOrder.indexOf(b.id);
+            // Items not in the order go to the end
+            if (indexA === -1 && indexB === -1) return 0;
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+        return sorted;
+    }, [selectedPet, selectedPetOwners, userProfile?.caregiverOrders]);
+
     // Set default author and action order
     useEffect(() => {
         if (!isEditMode && selectedPetOwners.length > 0) {
@@ -77,11 +96,22 @@ export const AddLog: React.FC = () => {
             }
         }
 
-        // Load action order from pet if available
-        if (selectedPet?.actionOrder) {
-            setActionOrder(selectedPet.actionOrder);
+        // Load action order from user's profile (per-user preference)
+        // Merge saved order with any missing actions
+        const DEFAULT_ACTION_ORDER = ['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'deworming', 'bath', 'weight'];
+        if (selectedPet) {
+            const userActionOrder = userProfile?.actionOrders?.[selectedPet.id];
+            if (userActionOrder) {
+                const missingActions = DEFAULT_ACTION_ORDER.filter(a => !userActionOrder.includes(a));
+                setActionOrder([...userActionOrder, ...missingActions]);
+            }
+            // Otherwise keep the default initialized in useState
         }
-    }, [selectedPetOwners, selectedPet, user?.uid, isEditMode]);
+        // Load hidden actions from user's profile (per-user preference)
+        if (selectedPet && userProfile?.hiddenActions?.[selectedPet.id]) {
+            setHiddenActions(userProfile.hiddenActions[selectedPet.id]);
+        }
+    }, [selectedPetOwners, selectedPet, userProfile, user?.uid, isEditMode]);
 
     useEffect(() => {
         if (!isEditMode) {
@@ -219,6 +249,24 @@ export const AddLog: React.FC = () => {
         setTime(now.toTimeString().slice(0, 5));
     };
 
+    // Default labels for actions
+    const DEFAULT_LABELS: Record<string, string> = {
+        food: '更換飼料',
+        water: '更換飲水',
+        litter: '清理貓砂',
+        grooming: '梳毛',
+        medication: '給藥',
+        supplements: '保健食品',
+        deworming: '驅蟲',
+        bath: '洗澡',
+        weight: '紀錄體重',
+    };
+
+    // Get label for action (custom label from pet or default)
+    const getActionLabel = (actionId: string) => {
+        return selectedPet?.actionLabels?.[actionId] || DEFAULT_LABELS[actionId] || actionId;
+    };
+
     const ActionButton = ({
         id,
         label,
@@ -301,8 +349,8 @@ export const AddLog: React.FC = () => {
                                 <User className="w-4 h-4" />
                                 <h3 className="text-sm font-bold uppercase tracking-wider">紀錄人</h3>
                             </div>
-                            <div className={`grid gap-4 ${selectedPetOwners.length <= 2 ? 'grid-cols-2' : selectedPetOwners.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                                {selectedPetOwners.map((owner) => {
+                            <div className={`grid gap-4 ${sortedPetOwners.length <= 2 ? 'grid-cols-2' : sortedPetOwners.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                                {sortedPetOwners.map((owner) => {
                                     const isActive = author === owner.displayName;
                                     return (
                                         <button
@@ -369,14 +417,14 @@ export const AddLog: React.FC = () => {
                         <section className="space-y-4">
                             <h3 className="text-sm font-bold text-stone-500 uppercase tracking-wider px-1">完成項目</h3>
                             <div className="grid grid-cols-1 gap-3">
-                                {actionOrder.map((actionId) => {
+                                {actionOrder.filter(a => !hiddenActions.includes(a)).map((actionId) => {
                                     switch (actionId) {
                                         case 'food':
                                             return (
                                                 <ActionButton
                                                     key="food"
                                                     id="food"
-                                                    label="更換飼料"
+                                                    label={getActionLabel('food')}
                                                     icon={Utensils}
                                                     active={actions.food}
                                                     activeColorClass="bg-yellow-50 border-yellow-200"
@@ -388,7 +436,7 @@ export const AddLog: React.FC = () => {
                                                 <ActionButton
                                                     key="water"
                                                     id="water"
-                                                    label="更換飲水"
+                                                    label={getActionLabel('water')}
                                                     icon={Droplets}
                                                     active={actions.water}
                                                     activeColorClass="bg-[#921AFF]/5 border-[#921AFF]/20"
@@ -400,7 +448,7 @@ export const AddLog: React.FC = () => {
                                                 <div key="litter" className={`rounded-2xl transition-all duration-300 ${actions.litter ? 'bg-emerald-50 p-2 border border-emerald-200' : ''}`}>
                                                     <ActionButton
                                                         id="litter"
-                                                        label="清理貓砂"
+                                                        label={getActionLabel('litter')}
                                                         icon={Trash2}
                                                         active={actions.litter}
                                                         activeColorClass="bg-emerald-100 border-emerald-200"
@@ -497,7 +545,7 @@ export const AddLog: React.FC = () => {
                                                 <ActionButton
                                                     key="grooming"
                                                     id="grooming"
-                                                    label="梳毛"
+                                                    label={getActionLabel('grooming')}
                                                     icon={CombIcon}
                                                     active={actions.grooming}
                                                     activeColorClass="bg-pink-50 border-pink-200"
@@ -509,7 +557,7 @@ export const AddLog: React.FC = () => {
                                                 <ActionButton
                                                     key="medication"
                                                     id="medication"
-                                                    label="給藥"
+                                                    label={getActionLabel('medication')}
                                                     icon={Pill}
                                                     active={actions.medication}
                                                     activeColorClass="bg-cyan-50 border-cyan-200"
@@ -521,7 +569,7 @@ export const AddLog: React.FC = () => {
                                                 <ActionButton
                                                     key="supplements"
                                                     id="supplements"
-                                                    label="保健食品"
+                                                    label={getActionLabel('supplements')}
                                                     icon={Leaf}
                                                     active={actions.supplements}
                                                     activeColorClass="bg-indigo-50 border-indigo-200"
@@ -533,7 +581,7 @@ export const AddLog: React.FC = () => {
                                                 <ActionButton
                                                     key="deworming"
                                                     id="deworming"
-                                                    label="驅蟲"
+                                                    label={getActionLabel('deworming')}
                                                     icon={Bug}
                                                     active={actions.deworming}
                                                     activeColorClass="bg-red-50 border-red-200"
@@ -545,7 +593,7 @@ export const AddLog: React.FC = () => {
                                                 <ActionButton
                                                     key="bath"
                                                     id="bath"
-                                                    label="洗澡"
+                                                    label={getActionLabel('bath')}
                                                     icon={ShowerHead}
                                                     active={actions.bath}
                                                     activeColorClass="bg-blue-50 border-blue-200"
@@ -568,7 +616,7 @@ export const AddLog: React.FC = () => {
                                                         <div className={`p-3 rounded-full ${recordWeight ? 'bg-white/50' : 'bg-stone-100'}`}>
                                                             <Scale className={`w-6 h-6 ${recordWeight ? 'text-[#EA7500]' : 'text-stone-400'}`} />
                                                         </div>
-                                                        <span className={`font-bold text-lg flex-1 text-left ${recordWeight ? 'text-stone-700' : ''}`}>紀錄體重</span>
+                                                        <span className={`font-bold text-lg flex-1 text-left ${recordWeight ? 'text-stone-700' : ''}`}>{getActionLabel('weight')}</span>
                                                         <div className={`
                                                             w-6 h-6 rounded-full border-2 flex items-center justify-center
                                                             ${recordWeight ? 'border-stone-600 bg-stone-600' : 'border-stone-300'}

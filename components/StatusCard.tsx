@@ -6,9 +6,10 @@ import { TaskProgress } from '../types';
 interface StatusCardProps {
   type: 'food' | 'water' | 'litter' | 'grooming' | 'medication' | 'supplements' | 'weight';
   progress: TaskProgress;
+  customLabel?: string; // Custom label from pet settings
 }
 
-export const StatusCard: React.FC<StatusCardProps> = ({ type, progress }) => {
+export const StatusCard: React.FC<StatusCardProps> = ({ type, progress, customLabel }) => {
   const config = {
     food: {
       label: '更換飼料',
@@ -101,7 +102,7 @@ export const StatusCard: React.FC<StatusCardProps> = ({ type, progress }) => {
       </div>
 
       <span className={`font-bold text-sm mb-3 ${isDone ? 'text-stone-400' : 'text-stone-700'}`}>
-        {label}
+        {customLabel || label}
       </span>
 
       {/* Progress Indicators */}

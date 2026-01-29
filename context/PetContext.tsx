@@ -12,6 +12,7 @@ interface PetContextType {
     loading: boolean;
     selectPet: (petId: string) => Promise<void>;
     refreshPets: () => Promise<void>;
+    refreshSelectedPet: () => Promise<void>;
     refreshLogs: () => Promise<void>;
     refreshTodayStatus: () => Promise<void>;
     saveLog: (log: CareLog) => Promise<void>;
@@ -39,6 +40,7 @@ const PetContext = createContext<PetContextType>({
     loading: true,
     selectPet: async () => {},
     refreshPets: async () => {},
+    refreshSelectedPet: async () => {},
     refreshLogs: async () => {},
     refreshTodayStatus: async () => {},
     saveLog: async () => {},
@@ -109,6 +111,19 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             console.error('Failed to select pet:', error);
         }
     }, []);
+
+    // Refresh the currently selected pet's data
+    const refreshSelectedPet = useCallback(async () => {
+        if (!selectedPet) return;
+        try {
+            const pet = await getPet(selectedPet.id);
+            if (pet) {
+                setSelectedPet(pet);
+            }
+        } catch (error) {
+            console.error('Failed to refresh selected pet:', error);
+        }
+    }, [selectedPet]);
 
     // Load logs for selected pet
     const refreshLogs = useCallback(async () => {
@@ -197,6 +212,7 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loading,
         selectPet,
         refreshPets,
+        refreshSelectedPet,
         refreshLogs,
         refreshTodayStatus,
         saveLog: saveLogHandler,
