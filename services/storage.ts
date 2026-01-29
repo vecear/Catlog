@@ -367,11 +367,24 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 // Find user by email
 export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
   try {
-    const q = query(collection(db, USERS_COLLECTION), where('email', '==', email.toLowerCase().trim()));
-    const querySnapshot = await getDocs(q);
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // First try lowercase (for new users)
+    let q = query(collection(db, USERS_COLLECTION), where('email', '==', normalizedEmail));
+    let querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
       return querySnapshot.docs[0].data() as UserProfile;
     }
+
+    // Fallback: try original case (for existing users who might have mixed-case emails)
+    if (normalizedEmail !== email.trim()) {
+      q = query(collection(db, USERS_COLLECTION), where('email', '==', email.trim()));
+      querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        return querySnapshot.docs[0].data() as UserProfile;
+      }
+    }
+
     return null;
   } catch (e) {
     console.error("Failed to find user by email", e);
@@ -388,7 +401,7 @@ export const createUserProfile = async (userId: string, email: string, linkedPro
     const userProfile: UserProfile = {
       id: userId,
       displayName: '',
-      email: email,
+      email: email.toLowerCase().trim(),
       color: randomColor,
       linkedProviders,
       petIds: [],
@@ -903,6 +916,46 @@ export const savePetWeightLog = async (petId: string, log: WeightLog): Promise<v
   } catch (e) {
     console.error("Failed to save pet weight log", e);
     throw e;
+  }
+};
+
+// Verify pet ownership by email, pet name, and birthday (for password reset)
+export const verifyPetOwnership = async (
+  email: string,
+  petName: string,
+  petBirthday: string
+): Promise<{ verified: boolean; error?: string }> => {
+  try {
+    // Find user by email
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return { verified: false, error: '找不到此電子郵件對應的帳號' };
+    }
+
+    // Get user's pets
+    if (!user.petIds || user.petIds.length === 0) {
+      return { verified: false, error: '此帳號沒有關聯的寵物' };
+    }
+
+    // Check if any pet matches the name and birthday
+    for (const petId of user.petIds) {
+      const pet = await getPet(petId);
+      if (pet) {
+        // Compare pet name (case-insensitive, trimmed)
+        const nameMatch = pet.name.trim().toLowerCase() === petName.trim().toLowerCase();
+        // Compare birthday exactly
+        const birthdayMatch = pet.birthday === petBirthday;
+
+        if (nameMatch && birthdayMatch) {
+          return { verified: true };
+        }
+      }
+    }
+
+    return { verified: false, error: '寵物名稱或生日不正確' };
+  } catch (e) {
+    console.error("Failed to verify pet ownership", e);
+    return { verified: false, error: '驗證失敗，請稍後再試' };
   }
 };
 

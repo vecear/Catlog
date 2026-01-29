@@ -12,6 +12,7 @@ import {
     updateEmail,
     updatePassword,
     verifyBeforeUpdateEmail,
+    sendPasswordResetEmail,
     User
 } from "firebase/auth";
 import { auth } from "./firebase";
@@ -179,6 +180,21 @@ export const updateUserPassword = async (user: User, currentPassword: string, ne
             throw new Error('新密碼強度不足，請使用至少 6 個字元');
         } else if (error.code === 'auth/requires-recent-login') {
             throw new Error('請重新登入後再試');
+        }
+        throw error;
+    }
+};
+
+// Send password reset email
+export const resetPassword = async (email: string) => {
+    try {
+        await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+        console.error("Error sending password reset email", error);
+        if (error.code === 'auth/user-not-found') {
+            throw new Error('找不到此電子郵件對應的帳號');
+        } else if (error.code === 'auth/invalid-email') {
+            throw new Error('電子郵件格式無效');
         }
         throw error;
     }
