@@ -128,11 +128,14 @@ export const LoginPage: React.FC = () => {
         <div className="min-h-screen flex">
             {/* Left side - Large image (desktop only) */}
             <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 items-center justify-center p-12">
-                <div className="max-w-lg text-center">
+                <div
+                    className="max-w-lg text-center cursor-pointer"
+                    onClick={handleLogoClick}
+                >
                     <img
                         src="/Catlog/banner_logo.png"
                         alt="PetLog Logo"
-                        className="w-full max-w-md mx-auto"
+                        className="w-full max-w-md mx-auto hover:scale-105 transition-transform"
                     />
                 </div>
             </div>
@@ -156,7 +159,7 @@ export const LoginPage: React.FC = () => {
                     {petSounds.map(sound => (
                         <div
                             key={sound.id}
-                            className="lg:hidden fixed pointer-events-none z-50 animate-[fadeUp_2.5s_ease-out_forwards]"
+                            className="fixed pointer-events-none z-50 animate-[fadeUp_2.5s_ease-out_forwards]"
                             style={{ left: `${sound.x}%`, top: `${sound.y}%` }}
                         >
                             <span className="text-amber-500/70 font-bold text-2xl drop-shadow-sm">{sound.text}</span>

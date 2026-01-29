@@ -22,6 +22,9 @@ export const Home: React.FC = () => {
   // Pet sound animation state
   const [petSounds, setPetSounds] = useState<Array<{ id: number; text: string; x: number; y: number }>>([]);
 
+  // Pet name animation state
+  const [petNameAnimation, setPetNameAnimation] = useState<string>('');
+
   // Pet type to base sound mapping
   const petSoundMap: Record<string, string> = {
     cat: '喵',
@@ -56,6 +59,12 @@ export const Home: React.FC = () => {
     setTimeout(() => {
       setPetSounds(prev => prev.filter(s => s.id !== id));
     }, 2500);
+
+    // Apply random animation to pet name
+    const animations = ['animate__rubberBand', 'animate__bounce', 'animate__tada', 'animate__heartBeat', 'animate__headShake', 'animate__wobble', 'animate__swing'];
+    const randomAnim = animations[Math.floor(Math.random() * animations.length)];
+    setPetNameAnimation(`animate__animated ${randomAnim}`);
+    setTimeout(() => setPetNameAnimation(''), 1000);
   };
 
   const fetchData = async () => {
@@ -448,11 +457,11 @@ export const Home: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-stone-600 tracking-tight">
               {selectedPet.adoptionDate ? (
                 <>
-                  有<span className="text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block" onClick={handlePetNameClick}>{petName}{petIcon}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
+                  有<span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block ${petNameAnimation}`} onClick={handlePetNameClick}>{petName}{petIcon}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
                 </>
               ) : (
                 <>
-                  <span className="text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block" onClick={handlePetNameClick}>{petName}{petIcon}</span>的生活
+                  <span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block ${petNameAnimation}`} onClick={handlePetNameClick}>{petName}{petIcon}</span>的生活
                 </>
               )}
             </h1>
