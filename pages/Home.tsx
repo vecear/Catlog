@@ -340,17 +340,19 @@ export const Home: React.FC = () => {
   return (
     <div className="space-y-6 md:space-y-8 animate-fade-in">
 
-      <header className="bg-white p-4 shadow-sm z-10 sticky top-0 md:rounded-2xl md:mt-2 md:mx-0">
+      <header className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 backdrop-blur-sm p-4 shadow-sm z-10 sticky top-0 md:rounded-2xl md:mt-2 md:mx-0 border-b border-amber-100/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-stone-800 tracking-tight flex items-center gap-2">
-              <span className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-lg">🐱</span>
-              <div className="flex flex-col items-start leading-none">
-
-                <span>
-                  {profile?.pet.name || '小賀'}的生活
-                </span>
-              </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-stone-600 tracking-tight">
+              {profile?.pet.adoptionDate ? (
+                <>
+                  有<span className="text-amber-600 font-black">{profile?.pet.name || '小賀'}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(profile.pet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
+                </>
+              ) : (
+                <>
+                  <span className="text-amber-600 font-black">{profile?.pet.name || '小賀'}</span>的生活
+                </>
+              )}
             </h1>
             <button
               onClick={() => window.location.reload()}
@@ -378,7 +380,7 @@ export const Home: React.FC = () => {
       </header>
 
       {/* Pet Stats Highlights Card */}
-      <section className="bg-white p-4 rounded-2xl shadow-sm border border-stone-100 grid grid-cols-4 gap-2">
+      <section className="bg-gradient-to-br from-white to-amber-50/30 p-4 rounded-2xl shadow-sm border border-amber-100/50 grid grid-cols-4 gap-2">
         {/* Birthday Stat */}
         {profile?.pet.birthday && (() => {
           const today = new Date();
@@ -393,16 +395,16 @@ export const Home: React.FC = () => {
           const isBirthdayToday = today.getMonth() === birthMonth - 1 && today.getDate() === birthDay;
 
           return (
-            <div className="bg-orange-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+            <div className="bg-gradient-to-br from-rose-50 to-orange-50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0 border border-rose-100/50">
               <span className="text-base mb-1">🎂</span>
-              <span className="text-[10px] text-stone-400 font-medium truncate w-full">
-                <span className="text-red-500">{nextAge}歲</span>倒數
+              <span className="text-[10px] text-stone-500 font-medium truncate w-full">
+                <span className="text-rose-500 font-semibold">{nextAge}歲</span>倒數
               </span>
-              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
+              <div className="text-[11px] sm:text-sm font-bold text-stone-600 truncate w-full">
                 {isBirthdayToday ? (
-                  <span className="text-orange-500 animate-pulse">{nextAge} 歲生日！</span>
+                  <span className="text-rose-500 animate-pulse">{nextAge} 歲生日！</span>
                 ) : (
-                  <><span className="text-orange-500">{diffDays}</span> 天</>
+                  <><span className="text-rose-500">{diffDays}</span> 天</>
                 )}
               </div>
             </div>
@@ -415,12 +417,12 @@ export const Home: React.FC = () => {
           const daysSinceBath = lastBathLog ? Math.floor((Date.now() - lastBathLog.timestamp) / (1000 * 60 * 60 * 24)) : null;
 
           return (
-            <div className="bg-blue-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+            <div className="bg-gradient-to-br from-sky-50 to-cyan-50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0 border border-sky-100/50">
               <span className="text-base mb-1">🚿</span>
-              <span className="text-[10px] text-stone-400 font-medium truncate w-full">上次洗澡</span>
-              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
+              <span className="text-[10px] text-stone-500 font-medium truncate w-full">上次洗澡</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-600 truncate w-full">
                 {daysSinceBath !== null ? (
-                  <><span className="text-blue-500">{daysSinceBath}</span> 天前</>
+                  <><span className="text-sky-500">{daysSinceBath}</span> 天前</>
                 ) : (
                   <span className="text-stone-300">無紀錄</span>
                 )}
@@ -435,12 +437,12 @@ export const Home: React.FC = () => {
           const daysSinceDeworming = lastDewormingLog ? Math.floor((Date.now() - lastDewormingLog.timestamp) / (1000 * 60 * 60 * 24)) : null;
 
           return (
-            <div className="bg-red-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0 border border-emerald-100/50">
               <span className="text-base mb-1">🦠</span>
-              <span className="text-[10px] text-stone-400 font-medium truncate w-full">上次驅蟲</span>
-              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
+              <span className="text-[10px] text-stone-500 font-medium truncate w-full">上次驅蟲</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-600 truncate w-full">
                 {daysSinceDeworming !== null ? (
-                  <><span className="text-red-500">{daysSinceDeworming}</span> 天前</>
+                  <><span className="text-emerald-600">{daysSinceDeworming}</span> 天前</>
                 ) : (
                   <span className="text-stone-300">無紀錄</span>
                 )}
@@ -454,12 +456,12 @@ export const Home: React.FC = () => {
           const latestWeightLog = logs.filter(l => l.weight).sort((a, b) => b.timestamp - a.timestamp)[0];
 
           return (
-            <div className="bg-amber-50/50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0">
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-2 rounded-xl flex flex-col items-center justify-center text-center min-w-0 border border-amber-100/50">
               <span className="text-base mb-1">⚖️</span>
-              <span className="text-[10px] text-stone-400 font-medium truncate w-full">目前體重</span>
-              <div className="text-[11px] sm:text-sm font-bold text-stone-700 truncate w-full">
+              <span className="text-[10px] text-stone-500 font-medium truncate w-full">目前體重</span>
+              <div className="text-[11px] sm:text-sm font-bold text-stone-600 truncate w-full">
                 {latestWeightLog?.weight ? (
-                  <><span className="text-[#EA7500]">{latestWeightLog.weight.toFixed(1)}</span> kg</>
+                  <><span className="text-amber-600">{latestWeightLog.weight.toFixed(1)}</span> kg</>
                 ) : (
                   <span className="text-stone-300">無紀錄</span>
                 )}
@@ -475,14 +477,14 @@ export const Home: React.FC = () => {
         <div className="md:col-span-2 space-y-6">
           {/* Weekly Scoreboard */}
           <section>
-            <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-4 mb-4 md:mb-0 border border-orange-100">
-              <h3 className="text-center font-bold text-stone-700 mb-1">
+            <div className="bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-rose-50/30 rounded-2xl p-4 mb-4 md:mb-0 border border-amber-200/50 shadow-sm">
+              <h3 className="text-center font-bold text-stone-600 mb-1">
                 {winnerInfo?.type === 'none' ? (
-                  <>本週{profile?.pet.name || '小賀'}<span className="text-[#CE0000] text-xl">還沒有愛</span></>
+                  <>本週{profile?.pet.name || '小賀'}<span className="text-rose-500 text-xl font-black">還沒有愛</span></>
                 ) : winnerInfo?.type === 'tie' ? (
-                  <>本週{profile?.pet.name || '小賀'}愛大家<span className="text-[#CE0000] text-xl">一樣多</span></>
+                  <>本週{profile?.pet.name || '小賀'}愛大家<span className="text-amber-600 text-xl font-black">一樣多</span></>
                 ) : winnerInfo?.type === 'winner' ? (
-                  <>本週{profile?.pet.name || '小賀'}更愛 <span style={{ color: getOwnerByName(winnerInfo.name)?.color }} className="text-xl">{winnerInfo.name}</span></>
+                  <>本週{profile?.pet.name || '小賀'}更愛 <span style={{ color: getOwnerByName(winnerInfo.name)?.color }} className="text-xl font-black">{winnerInfo.name}</span></>
                 ) : null}
               </h3>
               <p className="text-center text-xs text-stone-400 mb-2">本週給{profile?.pet.name || '小賀'}的愛 ({weekRange})</p>
@@ -519,7 +521,7 @@ export const Home: React.FC = () => {
               <div className="h-[72px] w-full mb-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fed7aa" opacity={0.5} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fcd9b6" opacity={0.6} />
                     <XAxis
                       dataKey="date"
                       tick={{ fontSize: 10, fill: '#78716c' }}
@@ -554,8 +556,8 @@ export const Home: React.FC = () => {
                 </ResponsiveContainer>
               </div>
 
-              <div className="text-[10px] text-stone-400 text-center mt-2 opacity-70">
-                (梳毛 +3, 飼料/水/給藥/保健/體重 +2, 貓砂:乾淨+1/髒+4, 驅蟲不計分)
+              <div className="text-[10px] text-stone-400 text-center mt-2 bg-white/50 rounded-lg py-1.5 px-2">
+                梳毛 +3 ｜ 飼料/水/藥/保健/體重 +2 ｜ 貓砂 乾淨+1 髒+4
               </div>
             </div>
           </section>
@@ -566,11 +568,11 @@ export const Home: React.FC = () => {
           {/* Today's Status Section */}
           <section>
             <div className="flex items-center gap-2 mb-2 px-1 md:px-0">
-              <CheckCircle className="w-5 h-5 text-stone-400" />
-              <h2 className="text-xl font-bold text-stone-800">今日任務</h2>
+              <CheckCircle className="w-5 h-5 text-amber-500" />
+              <h2 className="text-xl font-bold text-stone-700">今日任務</h2>
             </div>
-            <div className="text-xs text-stone-400 mb-4 px-1 md:px-0">
-              早 06:00-10:59 ｜ 中 11:00-16:59 ｜ 晚 17:00-22:59 ｜ 睡 23:00-05:59
+            <div className="text-xs text-stone-400 mb-4 px-1 md:px-0 bg-stone-50 rounded-lg py-1.5 px-3 inline-block">
+              早 06-10 ｜ 中 11-16 ｜ 晚 17-22 ｜ 睡 23-05
             </div>
 
             <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
@@ -590,10 +592,10 @@ export const Home: React.FC = () => {
       {hasWeightData && (
         <section className="mb-6">
           <div className="flex items-center gap-2 mb-2 px-1 md:px-0">
-            <Scale className="w-5 h-5 text-stone-400" />
+            <Scale className="w-5 h-5 text-amber-500" />
             <h2 className="text-lg font-bold text-stone-700">體重變化</h2>
           </div>
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-2xl border border-orange-200">
+          <div className="bg-gradient-to-br from-amber-50/60 to-orange-50/40 p-4 rounded-2xl border border-amber-200/50 shadow-sm">
             <div className="h-[70px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={weightChartData} margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
@@ -639,11 +641,11 @@ export const Home: React.FC = () => {
       <section>
         <div className="mb-4 px-1">
           <div className="flex items-center gap-2 mb-2">
-            <CalendarDays className="w-5 h-5 text-stone-400" />
+            <CalendarDays className="w-5 h-5 text-amber-500" />
             <h2 className="text-lg font-bold text-stone-700">月份紀錄</h2>
             <button
               onClick={() => setSelectedDate(new Date())}
-              className="p-1 rounded-full hover:bg-stone-100 text-stone-400 hover:text-orange-500 transition-all ml-2"
+              className="p-1 rounded-full hover:bg-amber-50 text-stone-400 hover:text-amber-600 transition-all ml-2"
               title="回到當月"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -706,7 +708,7 @@ export const Home: React.FC = () => {
         </div>
         <div className="space-y-6">
           {monthlyLogs.length === 0 ? (
-            <div className="text-center py-10 text-stone-400 bg-white rounded-xl border border-stone-200 border-dashed">
+            <div className="text-center py-10 text-stone-400 bg-gradient-to-br from-white to-amber-50/30 rounded-xl border border-amber-200/50 border-dashed">
               本月尚無紀錄
             </div>
           ) : (
@@ -723,7 +725,7 @@ export const Home: React.FC = () => {
                     {dayGroup.logs.map((log) => {
                       const ownerData = getOwnerByName(log.author);
                       return (
-                        <div key={log.id} className="bg-white p-4 rounded-xl shadow-sm border border-stone-100 flex items-center justify-between relative overflow-hidden group">
+                        <div key={log.id} className="bg-gradient-to-r from-white to-amber-50/20 p-4 rounded-xl shadow-sm border border-amber-100/50 flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
                           <div
                             className="absolute left-0 top-0 bottom-0 w-1"
                             style={{ backgroundColor: ownerData?.color || '#a8a29e' }}
@@ -790,7 +792,7 @@ export const Home: React.FC = () => {
               {!isExpanded && monthlyLogs.length > 3 && (
                 <button
                   onClick={() => setIsExpanded(true)}
-                  className="w-full py-3 text-stone-500 font-bold text-sm bg-white rounded-xl border border-stone-200 shadow-sm hover:bg-stone-50 hover:text-stone-600 hover:border-stone-300 transition-all flex items-center justify-center gap-2 mt-4"
+                  className="w-full py-3 text-amber-700 font-bold text-sm bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200/50 shadow-sm hover:from-amber-100 hover:to-orange-100 transition-all flex items-center justify-center gap-2 mt-4"
                 >
                   <CalendarDays className="w-4 h-4" />
                   <span>顯示當月所有紀錄 ({monthlyLogs.length} 天)</span>
@@ -799,7 +801,7 @@ export const Home: React.FC = () => {
               {isExpanded && monthlyLogs.length > 3 && (
                 <button
                   onClick={() => setIsExpanded(false)}
-                  className="w-full py-3 text-stone-500 font-bold text-sm bg-white rounded-xl border border-stone-200 shadow-sm hover:bg-stone-50 hover:text-stone-600 hover:border-stone-300 transition-all flex items-center justify-center gap-2 mt-4"
+                  className="w-full py-3 text-stone-600 font-bold text-sm bg-gradient-to-r from-stone-50 to-stone-100 rounded-xl border border-stone-200/50 shadow-sm hover:from-stone-100 hover:to-stone-200 transition-all flex items-center justify-center gap-2 mt-4"
                 >
                   <ChevronUp className="w-4 h-4" />
                   <span>顯示近三天</span>
@@ -814,7 +816,7 @@ export const Home: React.FC = () => {
       <div className="fixed bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
         <button
           onClick={() => navigate('/add')}
-          className="pointer-events-auto bg-stone-800 text-white flex items-center gap-2 px-6 py-4 rounded-full shadow-xl hover:bg-stone-700 hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-orange-50"
+          className="pointer-events-auto bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center gap-2 px-6 py-4 rounded-full shadow-xl hover:from-amber-600 hover:to-orange-600 hover:scale-105 active:scale-95 transition-all duration-300 ring-4 ring-amber-100"
         >
           <Plus className="w-6 h-6" />
           <span className="font-bold text-lg">紀錄一下</span>
