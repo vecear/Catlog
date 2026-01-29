@@ -417,14 +417,8 @@ export const Home: React.FC = () => {
                 </>
               )}
             </h1>
-            <button
-              onClick={() => window.location.reload()}
-              className="p-1.5 rounded-full hover:bg-stone-100 text-stone-400 transition-all ml-1"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {user?.photoURL && (
               <img
                 src={user.photoURL}
@@ -432,6 +426,12 @@ export const Home: React.FC = () => {
                 className="w-8 h-8 rounded-full border border-stone-200"
               />
             )}
+            <button
+              onClick={() => window.location.reload()}
+              className="p-2 rounded-full hover:bg-stone-100 text-stone-400 transition-all"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
             <button
               onClick={() => navigate('/settings')}
               className="p-2 text-stone-400 hover:bg-stone-50 rounded-full transition-colors"

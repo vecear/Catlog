@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithGoogle, signInWithEmail, resetPassword } from '../services/auth';
 import { useAuth } from '../context/AuthContext';
-import { verifyPetOwnership } from '../services/storage';
-import { Mail, Lock, Eye, EyeOff, X, Calendar, PawPrint } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, X } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
     const { isAuthenticated, needsOnboarding } = useAuth();
@@ -18,16 +17,10 @@ export const LoginPage: React.FC = () => {
 
     // Forgot password modal state
     const [showForgotModal, setShowForgotModal] = useState(false);
-    const [forgotMethod, setForgotMethod] = useState<'email' | 'pet'>('email');
     const [forgotEmail, setForgotEmail] = useState('');
-    const [petName, setPetName] = useState('');
-    const [petBirthday, setPetBirthday] = useState('');
     const [forgotError, setForgotError] = useState('');
     const [forgotSuccess, setForgotSuccess] = useState('');
     const [forgotLoading, setForgotLoading] = useState(false);
-
-    // Pet verification step state
-    const [petVerified, setPetVerified] = useState(false);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -72,12 +65,9 @@ export const LoginPage: React.FC = () => {
     };
 
     const openForgotModal = () => {
-        setForgotEmail(email); // Pre-fill with login email if entered
+        setForgotEmail(email);
         setForgotError('');
         setForgotSuccess('');
-        setPetName('');
-        setPetBirthday('');
-        setPetVerified(false);
         setShowForgotModal(true);
     };
 
@@ -85,7 +75,6 @@ export const LoginPage: React.FC = () => {
         setShowForgotModal(false);
         setForgotError('');
         setForgotSuccess('');
-        setPetVerified(false);
     };
 
     const handleEmailReset = async () => {
@@ -107,159 +96,133 @@ export const LoginPage: React.FC = () => {
         setForgotLoading(false);
     };
 
-    const handlePetVerify = async () => {
-        setForgotError('');
-        setForgotSuccess('');
-
-        if (!forgotEmail.trim()) {
-            setForgotError('請輸入電子郵件');
-            return;
-        }
-        if (!petName.trim()) {
-            setForgotError('請輸入寵物名稱');
-            return;
-        }
-        if (!petBirthday) {
-            setForgotError('請選擇寵物生日');
-            return;
-        }
-
-        setForgotLoading(true);
-        try {
-            const result = await verifyPetOwnership(forgotEmail, petName, petBirthday);
-            if (result.verified) {
-                // Verification passed, show success and prompt to send email
-                setPetVerified(true);
-                setForgotSuccess('驗證成功！請點擊下方按鈕發送密碼重設郵件');
-            } else {
-                setForgotError(result.error || '驗證失敗');
-            }
-        } catch (error: any) {
-            setForgotError(error.message || "驗證失敗，請重試");
-        }
-        setForgotLoading(false);
-    };
-
-    const handleSendResetAfterVerify = async () => {
-        setForgotError('');
-        setForgotLoading(true);
-        try {
-            await resetPassword(forgotEmail);
-            setForgotSuccess('密碼重設郵件已發送，請檢查您的信箱（可能被自動歸到垃圾信件）');
-        } catch (error: any) {
-            setForgotError(error.message || "發送失敗，請重試");
-        }
-        setForgotLoading(false);
-    };
-
     return (
-        <div className="flex flex-col items-center justify-center min-h-[80vh] p-4">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col items-center text-center overflow-hidden">
-                <div className="w-full">
+        <div className="min-h-screen flex">
+            {/* Left side - Large image (desktop only) */}
+            <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 items-center justify-center p-12">
+                <div className="max-w-lg text-center">
                     <img
                         src="/Catlog/banner_logo.png"
                         alt="PetLog Logo"
-                        className="w-full h-40 object-cover object-center"
+                        className="w-full max-w-md mx-auto"
                     />
                 </div>
+            </div>
 
-                <div className="p-8 w-full flex flex-col items-center">
-                    <p className="text-gray-500 mb-6">登入以管理您的寵物記錄</p>
-
-                    {error && (
-                        <div className="w-full mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-                            {error}
-                        </div>
-                    )}
-
-                    {successMessage && (
-                        <div className="w-full mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm">
-                            {successMessage}
-                        </div>
-                    )}
-
-                    {/* Google Login - Now at top */}
-                    <button
-                        onClick={handleGoogleLogin}
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mb-6"
-                    >
+            {/* Right side - Login form */}
+            <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center lg:justify-start p-4 lg:p-8 lg:pl-0">
+                <div className="w-full max-w-md">
+                    {/* Mobile only - Logo */}
+                    <div className="lg:hidden mb-4 h-24">
                         <img
-                            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                            alt="Google"
-                            className="w-6 h-6"
+                            src="/Catlog/banner_logo.png"
+                            alt="PetLog Logo"
+                            className="h-full w-full object-contain"
                         />
-                        使用 Google 帳號登入
-                    </button>
-
-                    {/* Divider */}
-                    <div className="w-full flex items-center gap-4 mb-6">
-                        <div className="flex-1 h-px bg-gray-200"></div>
-                        <span className="text-gray-400 text-sm">或使用電子郵件登入</span>
-                        <div className="flex-1 h-px bg-gray-200"></div>
                     </div>
 
-                    {/* Email Login Form */}
-                    <form onSubmit={handleEmailLogin} className="w-full space-y-4">
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="電子郵件"
-                                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
-                                disabled={isLoading}
-                            />
+                    {/* Login Card */}
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 lg:bg-transparent lg:shadow-none lg:border-0 lg:p-0">
+                        <div className="text-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800 lg:mb-2">登入</h2>
+                            <p className="text-gray-500">登入以管理您的寵物記錄</p>
                         </div>
 
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="密碼"
-                                className="w-full pl-11 pr-11 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
-                                disabled={isLoading}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                            </button>
-                        </div>
+                        {error && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                                {error}
+                            </div>
+                        )}
 
-                        {/* Forgot Password Link */}
-                        <div className="text-right">
-                            <button
-                                type="button"
-                                onClick={openForgotModal}
-                                disabled={isLoading}
-                                className="text-sm text-blue-500 hover:underline disabled:opacity-50"
-                            >
-                                忘記密碼？
-                            </button>
-                        </div>
+                        {successMessage && (
+                            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm">
+                                {successMessage}
+                            </div>
+                        )}
 
+                        {/* Google Login */}
                         <button
-                            type="submit"
+                            onClick={handleGoogleLogin}
                             disabled={isLoading}
-                            className="w-full py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white text-gray-700 font-medium rounded-xl border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mb-6"
                         >
-                            {isLoading ? '處理中...' : '登入'}
+                            <img
+                                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                                alt="Google"
+                                className="w-6 h-6"
+                            />
+                            使用 Google 帳號登入
                         </button>
 
-                        {/* Register Link - Now below login button */}
-                        <p className="text-sm text-gray-500 text-center pt-2">
-                            還沒有帳號？{' '}
-                            <Link to="/register" className="text-blue-500 font-medium hover:underline">
-                                立即註冊
-                            </Link>
-                        </p>
-                    </form>
+                        {/* Divider */}
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="flex-1 h-px bg-gray-200"></div>
+                            <span className="text-gray-400 text-sm">或使用電子郵件登入</span>
+                            <div className="flex-1 h-px bg-gray-200"></div>
+                        </div>
+
+                        {/* Email Login Form */}
+                        <form onSubmit={handleEmailLogin} className="space-y-4">
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="電子郵件"
+                                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
+                                    disabled={isLoading}
+                                />
+                            </div>
+
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="密碼"
+                                    className="w-full pl-11 pr-11 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
+                                    disabled={isLoading}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                            </div>
+
+                            {/* Forgot Password Link */}
+                            <div className="text-right">
+                                <button
+                                    type="button"
+                                    onClick={openForgotModal}
+                                    disabled={isLoading}
+                                    className="text-sm text-blue-500 hover:underline disabled:opacity-50"
+                                >
+                                    忘記密碼？
+                                </button>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? '處理中...' : '登入'}
+                            </button>
+
+                            {/* Register Link */}
+                            <p className="text-sm text-gray-500 text-center pt-2">
+                                還沒有帳號？{' '}
+                                <Link to="/register" className="text-blue-500 font-medium hover:underline">
+                                    立即註冊
+                                </Link>
+                            </p>
+                        </form>
+                    </div>
                 </div>
             </div>
 
@@ -278,30 +241,6 @@ export const LoginPage: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Method Tabs */}
-                        <div className="flex border-b">
-                            <button
-                                onClick={() => setForgotMethod('email')}
-                                className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                                    forgotMethod === 'email'
-                                        ? 'text-blue-500 border-b-2 border-blue-500'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                            >
-                                電子郵件驗證
-                            </button>
-                            <button
-                                onClick={() => setForgotMethod('pet')}
-                                className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                                    forgotMethod === 'pet'
-                                        ? 'text-blue-500 border-b-2 border-blue-500'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                            >
-                                寵物資料驗證
-                            </button>
-                        </div>
-
                         {/* Modal Content */}
                         <div className="p-6 space-y-4">
                             {forgotError && (
@@ -316,7 +255,7 @@ export const LoginPage: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Email Input (common for both methods) */}
+                            {/* Email Input */}
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
@@ -329,84 +268,17 @@ export const LoginPage: React.FC = () => {
                                 />
                             </div>
 
-                            {forgotMethod === 'email' ? (
-                                <>
-                                    <p className="text-sm text-gray-500">
-                                        我們會寄送密碼重設連結到您的信箱（可能被自動歸到垃圾信件）
-                                    </p>
-                                    <button
-                                        onClick={handleEmailReset}
-                                        disabled={forgotLoading}
-                                        className="w-full py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {forgotLoading ? '處理中...' : '發送重設郵件'}
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    {!petVerified ? (
-                                        <>
-                                            <p className="text-sm text-gray-500">
-                                                輸入您帳號中任一寵物的名稱和生日來驗證身份
-                                            </p>
+                            <p className="text-sm text-gray-500">
+                                我們會寄送密碼重設連結到您的信箱（可能被自動歸到垃圾信件）
+                            </p>
 
-                                            {/* Pet Name Input */}
-                                            <div className="relative">
-                                                <PawPrint className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                <input
-                                                    type="text"
-                                                    value={petName}
-                                                    onChange={(e) => setPetName(e.target.value)}
-                                                    placeholder="寵物名稱"
-                                                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
-                                                    disabled={forgotLoading}
-                                                />
-                                            </div>
-
-                                            {/* Pet Birthday Input */}
-                                            <div className="relative">
-                                                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                <input
-                                                    type="date"
-                                                    value={petBirthday}
-                                                    onChange={(e) => setPetBirthday(e.target.value)}
-                                                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
-                                                    disabled={forgotLoading}
-                                                />
-                                            </div>
-
-                                            <button
-                                                onClick={handlePetVerify}
-                                                disabled={forgotLoading}
-                                                className="w-full py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                {forgotLoading ? '驗證中...' : '驗證身份'}
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p className="text-sm text-gray-500">
-                                                身份驗證成功！由於安全限制，請點擊下方按鈕發送密碼重設郵件
-                                            </p>
-
-                                            <button
-                                                onClick={handleSendResetAfterVerify}
-                                                disabled={forgotLoading}
-                                                className="w-full py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                {forgotLoading ? '發送中...' : '發送密碼重設郵件'}
-                                            </button>
-
-                                            <button
-                                                onClick={() => setPetVerified(false)}
-                                                className="w-full py-2 text-gray-500 hover:text-gray-700 transition-colors text-sm"
-                                            >
-                                                重新驗證
-                                            </button>
-                                        </>
-                                    )}
-                                </>
-                            )}
+                            <button
+                                onClick={handleEmailReset}
+                                disabled={forgotLoading}
+                                className="w-full py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {forgotLoading ? '處理中...' : '發送重設郵件'}
+                            </button>
                         </div>
                     </div>
                 </div>
