@@ -367,19 +367,22 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 // Find user by email
 export const getUserByEmail = async (email: string): Promise<UserProfile | null> => {
   try {
-    const normalizedEmail = email.toLowerCase().trim();
+    const trimmedEmail = email.trim();
+    const lowerEmail = trimmedEmail.toLowerCase();
 
-    // First try lowercase (for new users)
-    let q = query(collection(db, USERS_COLLECTION), where('email', '==', normalizedEmail));
-    let querySnapshot = await getDocs(q);
-    if (!querySnapshot.empty) {
-      return querySnapshot.docs[0].data() as UserProfile;
-    }
+    // Try multiple case variations since Firestore is case-sensitive
+    const emailVariations = [
+      lowerEmail,                                           // all lowercase
+      trimmedEmail,                                         // original input
+      trimmedEmail.charAt(0).toUpperCase() + trimmedEmail.slice(1).toLowerCase(), // First letter cap
+    ];
 
-    // Fallback: try original case (for existing users who might have mixed-case emails)
-    if (normalizedEmail !== email.trim()) {
-      q = query(collection(db, USERS_COLLECTION), where('email', '==', email.trim()));
-      querySnapshot = await getDocs(q);
+    // Remove duplicates
+    const uniqueVariations = [...new Set(emailVariations)];
+
+    for (const emailVariant of uniqueVariations) {
+      const q = query(collection(db, USERS_COLLECTION), where('email', '==', emailVariant));
+      const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         return querySnapshot.docs[0].data() as UserProfile;
       }

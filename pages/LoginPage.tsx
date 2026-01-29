@@ -26,6 +26,9 @@ export const LoginPage: React.FC = () => {
     const [forgotSuccess, setForgotSuccess] = useState('');
     const [forgotLoading, setForgotLoading] = useState(false);
 
+    // Pet verification step state
+    const [petVerified, setPetVerified] = useState(false);
+
     useEffect(() => {
         if (isAuthenticated) {
             if (needsOnboarding) {
@@ -74,6 +77,7 @@ export const LoginPage: React.FC = () => {
         setForgotSuccess('');
         setPetName('');
         setPetBirthday('');
+        setPetVerified(false);
         setShowForgotModal(true);
     };
 
@@ -81,6 +85,7 @@ export const LoginPage: React.FC = () => {
         setShowForgotModal(false);
         setForgotError('');
         setForgotSuccess('');
+        setPetVerified(false);
     };
 
     const handleEmailReset = async () => {
@@ -102,7 +107,7 @@ export const LoginPage: React.FC = () => {
         setForgotLoading(false);
     };
 
-    const handlePetVerifyReset = async () => {
+    const handlePetVerify = async () => {
         setForgotError('');
         setForgotSuccess('');
 
@@ -123,14 +128,26 @@ export const LoginPage: React.FC = () => {
         try {
             const result = await verifyPetOwnership(forgotEmail, petName, petBirthday);
             if (result.verified) {
-                // Verification passed, send reset email
-                await resetPassword(forgotEmail);
-                setForgotSuccess('驗證成功！密碼重設郵件已發送，請檢查您的信箱（可能被自動歸到垃圾信件）');
+                // Verification passed, show success and prompt to send email
+                setPetVerified(true);
+                setForgotSuccess('驗證成功！請點擊下方按鈕發送密碼重設郵件');
             } else {
                 setForgotError(result.error || '驗證失敗');
             }
         } catch (error: any) {
             setForgotError(error.message || "驗證失敗，請重試");
+        }
+        setForgotLoading(false);
+    };
+
+    const handleSendResetAfterVerify = async () => {
+        setForgotError('');
+        setForgotLoading(true);
+        try {
+            await resetPassword(forgotEmail);
+            setForgotSuccess('密碼重設郵件已發送，請檢查您的信箱（可能被自動歸到垃圾信件）');
+        } catch (error: any) {
+            setForgotError(error.message || "發送失敗，請重試");
         }
         setForgotLoading(false);
     };
@@ -327,42 +344,67 @@ export const LoginPage: React.FC = () => {
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-sm text-gray-500">
-                                        輸入您帳號中任一寵物的名稱和生日來驗證身份
-                                    </p>
+                                    {!petVerified ? (
+                                        <>
+                                            <p className="text-sm text-gray-500">
+                                                輸入您帳號中任一寵物的名稱和生日來驗證身份
+                                            </p>
 
-                                    {/* Pet Name Input */}
-                                    <div className="relative">
-                                        <PawPrint className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            value={petName}
-                                            onChange={(e) => setPetName(e.target.value)}
-                                            placeholder="寵物名稱"
-                                            className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
-                                            disabled={forgotLoading}
-                                        />
-                                    </div>
+                                            {/* Pet Name Input */}
+                                            <div className="relative">
+                                                <PawPrint className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <input
+                                                    type="text"
+                                                    value={petName}
+                                                    onChange={(e) => setPetName(e.target.value)}
+                                                    placeholder="寵物名稱"
+                                                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
+                                                    disabled={forgotLoading}
+                                                />
+                                            </div>
 
-                                    {/* Pet Birthday Input */}
-                                    <div className="relative">
-                                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <input
-                                            type="date"
-                                            value={petBirthday}
-                                            onChange={(e) => setPetBirthday(e.target.value)}
-                                            className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
-                                            disabled={forgotLoading}
-                                        />
-                                    </div>
+                                            {/* Pet Birthday Input */}
+                                            <div className="relative">
+                                                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <input
+                                                    type="date"
+                                                    value={petBirthday}
+                                                    onChange={(e) => setPetBirthday(e.target.value)}
+                                                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
+                                                    disabled={forgotLoading}
+                                                />
+                                            </div>
 
-                                    <button
-                                        onClick={handlePetVerifyReset}
-                                        disabled={forgotLoading}
-                                        className="w-full py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {forgotLoading ? '驗證中...' : '驗證並重設密碼'}
-                                    </button>
+                                            <button
+                                                onClick={handlePetVerify}
+                                                disabled={forgotLoading}
+                                                className="w-full py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {forgotLoading ? '驗證中...' : '驗證身份'}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-sm text-gray-500">
+                                                身份驗證成功！由於安全限制，請點擊下方按鈕發送密碼重設郵件
+                                            </p>
+
+                                            <button
+                                                onClick={handleSendResetAfterVerify}
+                                                disabled={forgotLoading}
+                                                className="w-full py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {forgotLoading ? '發送中...' : '發送密碼重設郵件'}
+                                            </button>
+
+                                            <button
+                                                onClick={() => setPetVerified(false)}
+                                                className="w-full py-2 text-gray-500 hover:text-gray-700 transition-colors text-sm"
+                                            >
+                                                重新驗證
+                                            </button>
+                                        </>
+                                    )}
                                 </>
                             )}
                         </div>
