@@ -21,6 +21,22 @@
       /* orange-50 */
     }
 
+    /* 防止非輸入元素出現游標閃爍 */
+    *:not(input):not(textarea):not(select):not([contenteditable="true"]) {
+      caret-color: transparent;
+    }
+
+    /* 移除非互動元素的 focus outline */
+    div:focus,
+    span:focus,
+    section:focus,
+    article:focus,
+    header:focus,
+    main:focus,
+    p:focus {
+      outline: none;
+    }
+
     @keyframes fadeUp {
       0% {
         opacity: 1;

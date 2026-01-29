@@ -546,12 +546,6 @@ export const Home: React.FC = () => {
                 className="w-8 h-8 rounded-full border border-stone-200"
               />
             )}
-            <button
-              onClick={() => window.location.reload()}
-              className="p-2 rounded-full hover:bg-stone-100 text-stone-400 transition-all"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
             <div className="relative" ref={settingsMenuRef}>
               <button
                 onClick={() => setShowSettingsMenu(!showSettingsMenu)}
@@ -592,6 +586,16 @@ export const Home: React.FC = () => {
                     <span className="font-medium text-sm">介面設定</span>
                   </button>
                   <div className="h-px bg-stone-200 my-2" />
+                  <button
+                    onClick={() => {
+                      setShowSettingsMenu(false);
+                      window.location.reload();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-stone-700 hover:bg-stone-50 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4 text-stone-500" />
+                    <span className="font-medium text-sm">重新整理</span>
+                  </button>
                   <button
                     onClick={async () => {
                       setShowSettingsMenu(false);
