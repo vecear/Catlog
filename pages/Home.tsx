@@ -24,6 +24,8 @@ export const Home: React.FC = () => {
 
   // Pet name animation state
   const [petNameAnimation, setPetNameAnimation] = useState<string>('');
+  const [petNameClickCount, setPetNameClickCount] = useState(0);
+  const [petNameHidden, setPetNameHidden] = useState(false);
 
   // Pet type to base sound mapping
   const petSoundMap: Record<string, string> = {
@@ -50,6 +52,11 @@ export const Home: React.FC = () => {
   };
 
   const handlePetNameClick = () => {
+    if (petNameHidden) return;
+
+    const newCount = petNameClickCount + 1;
+    setPetNameClickCount(newCount);
+
     const petType = selectedPet?.type || 'cat';
     const randomSound = generatePetSound(petType);
     const x = Math.random() * 60 + 20;
@@ -59,6 +66,15 @@ export const Home: React.FC = () => {
     setTimeout(() => {
       setPetSounds(prev => prev.filter(s => s.id !== id));
     }, 2500);
+
+    // If clicked more than 5 times, run away!
+    if (newCount > 5) {
+      const exitAnimations = ['animate__backOutRight', 'animate__bounceOutRight', 'animate__bounceOut', 'animate__bounceOutUp', 'animate__bounceOutLeft'];
+      const randomExitAnim = exitAnimations[Math.floor(Math.random() * exitAnimations.length)];
+      setPetNameAnimation(`animate__animated ${randomExitAnim}`);
+      setTimeout(() => setPetNameHidden(true), 800);
+      return;
+    }
 
     // Apply random animation to pet name
     const animations = ['animate__rubberBand', 'animate__bounce', 'animate__tada', 'animate__heartBeat', 'animate__headShake', 'animate__wobble', 'animate__swing'];
@@ -457,11 +473,11 @@ export const Home: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-stone-600 tracking-tight">
               {selectedPet.adoptionDate ? (
                 <>
-                  有<span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block ${petNameAnimation}`} onClick={handlePetNameClick}>{petName}{petIcon}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
+                  有<span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block ${petNameAnimation} ${petNameHidden ? 'invisible' : ''}`} onClick={handlePetNameClick}>{petName}{petIcon}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
                 </>
               ) : (
                 <>
-                  <span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block ${petNameAnimation}`} onClick={handlePetNameClick}>{petName}{petIcon}</span>的生活
+                  <span className={`text-amber-600 font-black cursor-pointer hover:scale-105 transition-transform inline-block ${petNameAnimation} ${petNameHidden ? 'invisible' : ''}`} onClick={handlePetNameClick}>{petName}{petIcon}</span>的生活
                 </>
               )}
             </h1>
