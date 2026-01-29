@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Utensils, Droplets, Trash2, User, AlertCircle, CheckCircle, HelpCircle, XCircle, Sparkles, Clock, Pill, Scale, ShowerHead, Bug, Leaf } from 'lucide-react';
 import { CombIcon } from '../components/icons/CombIcon';
-import { saveLog, getLog, updateLog, getLogs, getProfile } from '../services/storage';
-import { CareLog, StoolType, UrineStatus, Owner } from '../types';
+import { CareLog, StoolType, UrineStatus, UserProfile } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { USER_MAPPING } from '../services/auth';
+import { usePet } from '../context/PetContext';
 
 export const AddLog: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const isEditMode = !!id;
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
+    const { selectedPet, selectedPetOwners, logs, saveLog, updateLog, getLog } = usePet();
 
     // Helper function to format date in local timezone (YYYY-MM-DD)
     const formatLocalDate = (date: Date) => {
@@ -29,7 +29,6 @@ export const AddLog: React.FC = () => {
     const [date, setDate] = useState(defaultDate);
     const [time, setTime] = useState(defaultTime);
     const [author, setAuthor] = useState<string>('');
-    const [owners, setOwners] = useState<Owner[]>([]);
     const [actionOrder, setActionOrder] = useState<string[]>(['food', 'water', 'litter', 'grooming', 'medication', 'deworming', 'bath', 'weight']);
     const [actions, setActions] = useState({
         food: false,
@@ -53,96 +52,82 @@ export const AddLog: React.FC = () => {
     const [weightDecimal, setWeightDecimal] = useState(0);
 
     // Load latest weight for default
-    const loadLatestWeight = async () => {
-        try {
-            const logs = await getLogs();
-            const lastWeightLog = logs
-                .filter(l => l.weight)
-                .sort((a, b) => b.timestamp - a.timestamp)[0];
+    const loadLatestWeight = () => {
+        const lastWeightLog = logs
+            .filter(l => l.weight)
+            .sort((a, b) => b.timestamp - a.timestamp)[0];
 
-            if (lastWeightLog && lastWeightLog.weight) {
-                const intPart = Math.floor(lastWeightLog.weight);
-                const decPart = Math.round((lastWeightLog.weight - intPart) * 10);
-                setWeightInt(intPart);
-                setWeightDecimal(decPart);
-            }
-        } catch (error) {
-            console.error("Failed to load latest weight", error);
+        if (lastWeightLog && lastWeightLog.weight) {
+            const intPart = Math.floor(lastWeightLog.weight);
+            const decPart = Math.round((lastWeightLog.weight - intPart) * 10);
+            setWeightInt(intPart);
+            setWeightDecimal(decPart);
         }
     };
 
-    // Load owners and action order from profile
-    const loadOwners = async () => {
-        try {
-            const profile = await getProfile();
-            setOwners(profile.owners);
-
-            // Set default author
-            if (!isEditMode) {
-                // Check if current user maps to an owner
-                const mappedName = user?.email ? USER_MAPPING[user.email] : undefined;
-                const matchingOwner = mappedName ? profile.owners.find(o => o.name === mappedName) : undefined;
-
-                if (matchingOwner) {
-                    setAuthor(matchingOwner.name);
-                } else if (profile.owners.length > 0) {
-                    setAuthor(profile.owners[0].name);
-                }
+    // Set default author and action order
+    useEffect(() => {
+        if (!isEditMode && selectedPetOwners.length > 0) {
+            // Set default author to current user if they're an owner
+            const currentUserOwner = selectedPetOwners.find(o => o.id === user?.uid);
+            if (currentUserOwner) {
+                setAuthor(currentUserOwner.displayName);
+            } else if (selectedPetOwners.length > 0) {
+                setAuthor(selectedPetOwners[0].displayName);
             }
-
-            // Load action order
-            if (profile.actionOrder) {
-                setActionOrder(profile.actionOrder);
-            }
-        } catch (error) {
-            console.error('Failed to load owners', error);
         }
-    };
+
+        // Load action order from pet if available
+        if (selectedPet?.actionOrder) {
+            setActionOrder(selectedPet.actionOrder);
+        }
+    }, [selectedPetOwners, selectedPet, user?.uid, isEditMode]);
 
     useEffect(() => {
-        loadOwners();
         if (!isEditMode) {
             loadLatestWeight();
         }
-    }, [isEditMode]);
+    }, [logs, isEditMode]);
 
     useEffect(() => {
         if (isEditMode && id) {
-            const fetchLog = async () => {
-                setIsLoading(true);
-                const log = await getLog(id);
-                if (log) {
-                    const dateObj = new Date(log.timestamp);
-                    setDate(formatLocalDate(dateObj));
-                    setTime(dateObj.toTimeString().slice(0, 5));
-                    setAuthor(log.author);
-                    setActions(log.actions);
-                    if (log.actions.litter) {
-                        setStoolType(log.stoolType || null);
-                        setUrineStatus(log.urineStatus || null);
-                        setIsLitterClean(log.isLitterClean || false);
-                    }
-                    // Load weight data if present
-                    if (log.weight !== undefined && log.weight !== null) {
-                        setRecordWeight(true);
-                        const intPart = Math.floor(log.weight);
-                        const decPart = Math.round((log.weight - intPart) * 10);
-                        setWeightInt(intPart);
-                        setWeightDecimal(decPart);
-                    }
-                } else {
-                    alert('找不到紀錄');
-                    navigate('/');
+            setIsLoading(true);
+            const log = getLog(id);
+            if (log) {
+                const dateObj = new Date(log.timestamp);
+                setDate(formatLocalDate(dateObj));
+                setTime(dateObj.toTimeString().slice(0, 5));
+                setAuthor(log.author);
+                setActions(log.actions);
+                if (log.actions.litter) {
+                    setStoolType(log.stoolType || null);
+                    setUrineStatus(log.urineStatus || null);
+                    setIsLitterClean(log.isLitterClean || false);
                 }
-                setIsLoading(false);
-            };
-            fetchLog();
+                // Load weight data if present
+                if (log.weight !== undefined && log.weight !== null) {
+                    setRecordWeight(true);
+                    const intPart = Math.floor(log.weight);
+                    const decPart = Math.round((log.weight - intPart) * 10);
+                    setWeightInt(intPart);
+                    setWeightDecimal(decPart);
+                }
+            } else {
+                alert('找不到紀錄');
+                navigate('/');
+            }
+            setIsLoading(false);
         }
-    }, [isEditMode, id, navigate]);
+    }, [isEditMode, id, navigate, getLog]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSubmitting) return;
+
+        if (!selectedPet) {
+            alert('請先選擇寵物');
+            return;
+        }
 
         const timestamp = new Date(`${date}T${time}`).getTime();
 
@@ -273,6 +258,22 @@ export const AddLog: React.FC = () => {
         </button>
     );
 
+    if (!selectedPet) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                <div className="text-6xl mb-4">🐾</div>
+                <h2 className="text-xl font-bold text-stone-700 mb-2">還沒有寵物</h2>
+                <p className="text-stone-500 mb-4 text-center">請先完成設定流程來新增您的寵物</p>
+                <button
+                    onClick={() => navigate('/onboarding')}
+                    className="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-600 transition-colors"
+                >
+                    開始設定
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6 animate-fade-in-up max-w-lg mx-auto">
             <div className="flex items-center gap-4 mb-2">
@@ -300,14 +301,14 @@ export const AddLog: React.FC = () => {
                                 <User className="w-4 h-4" />
                                 <h3 className="text-sm font-bold uppercase tracking-wider">紀錄人</h3>
                             </div>
-                            <div className={`grid gap-4 ${owners.length <= 2 ? 'grid-cols-2' : owners.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                                {owners.map((owner) => {
-                                    const isActive = author === owner.name;
+                            <div className={`grid gap-4 ${selectedPetOwners.length <= 2 ? 'grid-cols-2' : selectedPetOwners.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                                {selectedPetOwners.map((owner) => {
+                                    const isActive = author === owner.displayName;
                                     return (
                                         <button
                                             key={owner.id}
                                             type="button"
-                                            onClick={() => setAuthor(owner.name)}
+                                            onClick={() => setAuthor(owner.displayName)}
                                             className={`
                                                 py-3 px-4 rounded-xl font-bold transition-all duration-200
                                                 ${isActive
@@ -320,7 +321,7 @@ export const AddLog: React.FC = () => {
                                                 ringColor: `${owner.color}20`
                                             } : undefined}
                                         >
-                                            {owner.name}
+                                            {owner.displayName}
                                         </button>
                                     );
                                 })}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { PetProvider } from './context/PetContext';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { OnboardingPage } from './pages/OnboardingPage';
@@ -22,14 +23,16 @@ const App: React.FC = () => {
             path="/*"
             element={
               <PrivateRoute>
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/add" element={<AddLog />} />
-                    <Route path="/edit/:id" element={<AddLog />} />
-                    <Route path="/settings" element={<Settings />} />
-                  </Routes>
-                </Layout>
+                <PetProvider>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/add" element={<AddLog />} />
+                      <Route path="/edit/:id" element={<AddLog />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Routes>
+                  </Layout>
+                </PetProvider>
               </PrivateRoute>
             }
           />

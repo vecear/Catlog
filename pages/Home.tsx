@@ -2,55 +2,47 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
-import { getTodayStatus, getLogs, deleteLog, getProfile } from '../services/storage';
-import { CareLog, AppProfile, Owner } from '../types';
+import { CareLog, UserProfile, PET_TYPE_ICONS } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useAuth } from '../context/AuthContext';
-import { USER_MAPPING } from '../services/auth';
+import { usePet } from '../context/PetContext';
 
 
 export const Home: React.FC = () => {
-  const { user } = useAuth();
-  const userName = user?.email ? USER_MAPPING[user.email] || user.email.split('@')[0] : '';
+  const { user, userProfile } = useAuth();
+  const { selectedPet, selectedPetOwners, logs, todayStatus, loading, refreshLogs, refreshTodayStatus } = usePet();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<any>({
-    food: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
-    water: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
-    litter: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
-    grooming: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
-    medication: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
-    supplements: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false },
-    weight: { morning: false, noon: false, evening: false, bedtime: false, isComplete: false }
-  });
-  const [logs, setLogs] = useState<CareLog[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [profile, setProfile] = useState<AppProfile | null>(null);
 
   const fetchData = async () => {
     setIsRefreshing(true);
-    const [todayStatus, allLogs, loadedProfile] = await Promise.all([
-      getTodayStatus(),
-      getLogs(),
-      getProfile()
-    ]);
-    setStatus(todayStatus);
-    setLogs(allLogs);
-    setProfile(loadedProfile);
-    setTimeout(() => setIsRefreshing(false), 500); // Visual delay
+    await Promise.all([refreshLogs(), refreshTodayStatus()]);
+    setTimeout(() => setIsRefreshing(false), 500);
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (selectedPet) {
+      fetchData();
+    }
+  }, [selectedPet?.id]);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent potentially triggering other click events if any
+    e.stopPropagation();
     if (window.confirm('確定要刪除這筆紀錄嗎？')) {
       try {
+        const { deleteLog } = await import('../context/PetContext').then(m => {
+          // We need to use the context's deleteLog
+          return { deleteLog: async (logId: string) => {
+            const { deletePetLog } = await import('../services/storage');
+            if (selectedPet) {
+              await deletePetLog(selectedPet.id, logId);
+              await fetchData();
+            }
+          }};
+        });
         await deleteLog(id);
-        await fetchData(); // Refresh data
       } catch (error) {
         console.error(error);
         alert('刪除失敗');
@@ -81,7 +73,6 @@ export const Home: React.FC = () => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
 
-    // Get number of days in month
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     for (let i = daysInMonth; i >= 1; i--) {
@@ -147,29 +138,26 @@ export const Home: React.FC = () => {
 
 
   // Helper to get owner by name
-  const getOwnerByName = (name: string): Owner | undefined => {
-    return profile?.owners.find(o => o.name === name);
+  const getOwnerByName = (name: string): UserProfile | undefined => {
+    return selectedPetOwners.find(o => o.displayName === name);
   };
 
   // Calculate scores for the current week (Monday 00:00 to Sunday 23:59)
   const getWeeklyScores = () => {
-    if (!profile) return {} as Record<string, number>;
+    if (selectedPetOwners.length === 0) return {} as Record<string, number>;
 
     const today = new Date();
     const ownerScores: Record<string, number> = {};
 
-    // Initialize scores for all owners
-    profile.owners.forEach(owner => {
-      ownerScores[owner.name] = 0;
+    selectedPetOwners.forEach(owner => {
+      ownerScores[owner.displayName] = 0;
     });
 
-    // Calculate Monday of the current week
-    // getDay(): 0=Sunday, 1=Monday, ..., 6=Saturday
     const dayOfWeek = today.getDay();
-    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday goes back 6 days, others go to Monday
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diffToMonday);
     const mondayStart = monday.getTime();
-    const sundayEnd = mondayStart + 7 * 86400000; // Monday + 7 days
+    const sundayEnd = mondayStart + 7 * 86400000;
 
     logs.forEach(log => {
       if (log.timestamp >= mondayStart && log.timestamp < sundayEnd) {
@@ -185,12 +173,11 @@ export const Home: React.FC = () => {
 
   // Calculate chart data for the last 7 days
   const getChartData = () => {
-    if (!profile) return [];
+    if (selectedPetOwners.length === 0) return [];
 
     const today = new Date();
     const data = [];
 
-    // Create array for last 7 days (including today)
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
@@ -199,8 +186,8 @@ export const Home: React.FC = () => {
       const dateStr = d.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
 
       const dayScores: Record<string, number> = {};
-      profile.owners.forEach(owner => {
-        dayScores[owner.name] = 0;
+      selectedPetOwners.forEach(owner => {
+        dayScores[owner.displayName] = 0;
       });
 
       logs.forEach(log => {
@@ -235,9 +222,8 @@ export const Home: React.FC = () => {
     const mondayStr = monday.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
     const sundayStr = sunday.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
 
-    // Calculate ISO week number (week starts on Monday)
     const thursdayOfWeek = new Date(monday);
-    thursdayOfWeek.setDate(monday.getDate() + 3); // Thursday of the current week
+    thursdayOfWeek.setDate(monday.getDate() + 3);
     const yearStart = new Date(thursdayOfWeek.getFullYear(), 0, 1);
     const weekNumber = Math.ceil((((thursdayOfWeek.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 
@@ -247,7 +233,7 @@ export const Home: React.FC = () => {
 
   // Find winner
   const getWinner = () => {
-    if (!profile || profile.owners.length === 0) return null;
+    if (selectedPetOwners.length === 0) return null;
     const scores = Object.entries(ownerScores);
     if (scores.every(([_, score]) => score === 0)) return { type: 'none' as const };
     const maxScore = Math.max(...scores.map(([_, s]) => s));
@@ -259,10 +245,10 @@ export const Home: React.FC = () => {
 
   // Calculate all-time total scores
   const getAllTimeTotals = () => {
-    if (!profile) return {} as Record<string, number>;
+    if (selectedPetOwners.length === 0) return {} as Record<string, number>;
     const totals: Record<string, number> = {};
-    profile.owners.forEach(owner => {
-      totals[owner.name] = 0;
+    selectedPetOwners.forEach(owner => {
+      totals[owner.displayName] = 0;
     });
     logs.forEach(log => {
       const points = (log.actions.litter ? (log.isLitterClean ? 1 : 4) : 0) + (log.actions.food ? 2 : 0) + (log.actions.water ? 2 : 0) + (log.actions.grooming ? 3 : 0) + (log.actions.medication ? 2 : 0) + (log.actions.supplements ? 2 : 0) + (log.weight ? 2 : 0);
@@ -274,7 +260,7 @@ export const Home: React.FC = () => {
   };
   const allTimeTotals = getAllTimeTotals();
 
-  // Get weight data for chart - only show days with actual weight records
+  // Get weight data for chart
   const getWeightChartData = () => {
     const weightLogs = logs
       .filter(log => log.weight)
@@ -282,7 +268,6 @@ export const Home: React.FC = () => {
 
     if (weightLogs.length === 0) return [];
 
-    // Group logs by date and take the latest weight for each day
     const weightByDate = new Map<string, { date: string; weight: number; timestamp: number }>();
 
     weightLogs.forEach(log => {
@@ -290,7 +275,6 @@ export const Home: React.FC = () => {
       const dateKey = `${logDate.getFullYear()}-${logDate.getMonth()}-${logDate.getDate()}`;
       const dateStr = logDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
 
-      // Keep the latest weight record for each day
       const existing = weightByDate.get(dateKey);
       if (!existing || log.timestamp > existing.timestamp) {
         weightByDate.set(dateKey, {
@@ -301,7 +285,6 @@ export const Home: React.FC = () => {
       }
     });
 
-    // Convert to array and sort by timestamp
     return Array.from(weightByDate.values())
       .sort((a, b) => a.timestamp - b.timestamp)
       .map(({ date, weight }) => ({ date, weight }));
@@ -312,8 +295,8 @@ export const Home: React.FC = () => {
   // Generate random cat message
   const generateCatMessage = () => {
     const parts = ['喵', '~', '!'];
-    const additionalLength = Math.floor(Math.random() * 19) + 1; // 1 to 19 more chars
-    let message = '喵'; // Always start with 喵
+    const additionalLength = Math.floor(Math.random() * 19) + 1;
+    let message = '喵';
     for (let i = 0; i < additionalLength; i++) {
       message += parts[Math.floor(Math.random() * parts.length)];
     }
@@ -337,6 +320,34 @@ export const Home: React.FC = () => {
     return `(尿尿: ${urineCount}, 便便: ${stoolText})`;
   };
 
+  // Show loading or no pet message
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+      </div>
+    );
+  }
+
+  if (!selectedPet) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="text-6xl mb-4">🐾</div>
+        <h2 className="text-xl font-bold text-stone-700 mb-2">還沒有寵物</h2>
+        <p className="text-stone-500 mb-4 text-center">請先完成設定流程來新增您的寵物</p>
+        <button
+          onClick={() => navigate('/onboarding')}
+          className="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-600 transition-colors"
+        >
+          開始設定
+        </button>
+      </div>
+    );
+  }
+
+  const petName = selectedPet.name;
+  const petIcon = PET_TYPE_ICONS[selectedPet.type] || '🐾';
+
   return (
     <div className="space-y-6 md:space-y-8 animate-fade-in">
 
@@ -344,13 +355,13 @@ export const Home: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl md:text-3xl font-bold text-stone-600 tracking-tight">
-              {profile?.pet.adoptionDate ? (
+              {selectedPet.adoptionDate ? (
                 <>
-                  有<span className="text-amber-600 font-black">{profile?.pet.name || '小賀'}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(profile.pet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
+                  有<span className="text-amber-600 font-black">{petIcon}{petName}</span>的第<span className="text-amber-600 font-black">{Math.floor((Date.now() - new Date(selectedPet.adoptionDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}</span>天
                 </>
               ) : (
                 <>
-                  <span className="text-amber-600 font-black">{profile?.pet.name || '小賀'}</span>的生活
+                  <span className="text-amber-600 font-black">{petIcon}{petName}</span>的生活
                 </>
               )}
             </h1>
@@ -382,9 +393,9 @@ export const Home: React.FC = () => {
       {/* Pet Stats Highlights Card */}
       <section className="bg-gradient-to-br from-white to-amber-50/30 p-4 rounded-2xl shadow-sm border border-amber-100/50 grid grid-cols-4 gap-2">
         {/* Birthday Stat */}
-        {profile?.pet.birthday && (() => {
+        {selectedPet.birthday && (() => {
           const today = new Date();
-          const [birthYear, birthMonth, birthDay] = profile.pet.birthday.split('-').map(Number);
+          const [birthYear, birthMonth, birthDay] = selectedPet.birthday.split('-').map(Number);
           const thisYearBirthday = new Date(today.getFullYear(), birthMonth - 1, birthDay);
           const nextBirthday = thisYearBirthday < today && thisYearBirthday.toDateString() !== today.toDateString()
             ? new Date(today.getFullYear() + 1, birthMonth - 1, birthDay)
@@ -480,17 +491,17 @@ export const Home: React.FC = () => {
             <div className="bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-rose-50/30 rounded-2xl p-4 mb-4 md:mb-0 border border-amber-200/50 shadow-sm">
               <h3 className="text-center font-bold text-stone-600 mb-1">
                 {winnerInfo?.type === 'none' ? (
-                  <>本週{profile?.pet.name || '小賀'}<span className="text-rose-500 text-xl font-black">還沒有愛</span></>
+                  <>本週{petName}<span className="text-rose-500 text-xl font-black">還沒有愛</span></>
                 ) : winnerInfo?.type === 'tie' ? (
-                  <>本週{profile?.pet.name || '小賀'}愛大家<span className="text-amber-600 text-xl font-black">一樣多</span></>
+                  <>本週{petName}愛大家<span className="text-amber-600 text-xl font-black">一樣多</span></>
                 ) : winnerInfo?.type === 'winner' ? (
-                  <>本週{profile?.pet.name || '小賀'}更愛 <span style={{ color: getOwnerByName(winnerInfo.name)?.color }} className="text-xl font-black">{winnerInfo.name}</span></>
+                  <>本週{petName}更愛 <span style={{ color: getOwnerByName(winnerInfo.name)?.color }} className="text-xl font-black">{winnerInfo.name}</span></>
                 ) : null}
               </h3>
-              <p className="text-center text-xs text-stone-400 mb-2">本週給{profile?.pet.name || '小賀'}的愛 ({weekRange})</p>
+              <p className="text-center text-xs text-stone-400 mb-2">本週給{petName}的愛 ({weekRange})</p>
               <div className="flex justify-center gap-4 items-center text-sm font-medium mb-2 flex-wrap">
-                {profile?.owners.map((owner, index) => {
-                  const score = ownerScores[owner.name] || 0;
+                {selectedPetOwners.map((owner, index) => {
+                  const score = ownerScores[owner.displayName] || 0;
                   const maxScore = Math.max(...Object.values(ownerScores));
                   const isWinning = score === maxScore && score > 0;
                   return (
@@ -500,7 +511,7 @@ export const Home: React.FC = () => {
                         className={`text-center ${isWinning ? 'scale-110 font-bold' : ''} transition-transform`}
                         style={{ color: owner.color }}
                       >
-                        {owner.name}: <span className="text-lg">{score}</span> 分
+                        {owner.displayName}: <span className="text-lg">{score}</span> 分
                       </div>
                     </React.Fragment>
                   );
@@ -508,11 +519,11 @@ export const Home: React.FC = () => {
               </div>
               <p className="text-center text-xs text-stone-400 mb-1">全部累積總分</p>
               <div className="text-center text-xs text-stone-400 mb-4">
-                {profile?.owners.map((owner, index) => (
+                {selectedPetOwners.map((owner, index) => (
                   <span key={owner.id}>
                     {index > 0 && '，'}
-                    <span style={{ color: owner.color }} className="font-medium">{owner.name}</span>
-                    累積<span style={{ color: owner.color }} className="font-medium">{allTimeTotals[owner.name] || 0}</span>分愛
+                    <span style={{ color: owner.color }} className="font-medium">{owner.displayName}</span>
+                    累積<span style={{ color: owner.color }} className="font-medium">{allTimeTotals[owner.displayName] || 0}</span>分愛
                   </span>
                 ))}
               </div>
@@ -541,11 +552,11 @@ export const Home: React.FC = () => {
                       itemStyle={{ fontSize: '12px' }}
                       labelStyle={{ fontSize: '12px', color: '#78716c', marginBottom: '4px' }}
                     />
-                    {profile?.owners.map(owner => (
+                    {selectedPetOwners.map(owner => (
                       <Line
                         key={owner.id}
                         type="monotone"
-                        dataKey={owner.name}
+                        dataKey={owner.displayName}
                         stroke={owner.color}
                         strokeWidth={2}
                         dot={{ r: 3, fill: owner.color, strokeWidth: 0 }}
@@ -576,13 +587,13 @@ export const Home: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-              <StatusCard type="food" progress={status.food} />
-              <StatusCard type="water" progress={status.water} />
-              <StatusCard type="litter" progress={status.litter} />
-              <StatusCard type="grooming" progress={status.grooming} />
-              <StatusCard type="medication" progress={status.medication} />
-              <StatusCard type="supplements" progress={status.supplements} />
-              <StatusCard type="weight" progress={status.weight} />
+              <StatusCard type="food" progress={todayStatus.food} />
+              <StatusCard type="water" progress={todayStatus.water} />
+              <StatusCard type="litter" progress={todayStatus.litter} />
+              <StatusCard type="grooming" progress={todayStatus.grooming} />
+              <StatusCard type="medication" progress={todayStatus.medication} />
+              <StatusCard type="supplements" progress={todayStatus.supplements} />
+              <StatusCard type="weight" progress={todayStatus.weight} />
             </div>
           </section>
         </div>
