@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, X, Edit2, Check, Cat, Users, Copy, CheckCircle, XCircle, UserPlus, Loader2, UserMinus, GripVertical, Database } from 'lucide-react';
+import { ArrowLeft, X, Edit2, Check, Cat, Users, Copy, CheckCircle, XCircle, UserPlus, Loader2, UserMinus, GripVertical, Syringe, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   getUserPets,
   updatePet,
@@ -13,7 +13,7 @@ import {
   removeOwnerFromPet
 } from '../services/storage';
 import { useAuth } from '../context/AuthContext';
-import { Pet, UserProfile, CareRequest, PET_TYPE_LABELS, PET_TYPE_ICONS, PetType, PetGender, PET_GENDER_LABELS } from '../types';
+import { Pet, UserProfile, CareRequest, PET_TYPE_LABELS, PET_TYPE_ICONS, PetType, PetGender, PET_GENDER_LABELS, VaccineRecord, VaccineType, CatVaccineType, DogVaccineType, CAT_VACCINE_LABELS, DOG_VACCINE_LABELS } from '../types';
 
 export const PetSettings: React.FC = () => {
   const navigate = useNavigate();
@@ -54,6 +54,18 @@ export const PetSettings: React.FC = () => {
   // Caregiver order state
   const [caregiverOrder, setCaregiverOrder] = useState<string[]>([]);
   const [draggedCaregiver, setDraggedCaregiver] = useState<string | null>(null);
+
+  // Vaccine records state
+  const [editingVaccines, setEditingVaccines] = useState(false);
+  const [showAddVaccine, setShowAddVaccine] = useState(false);
+  const [newVaccineDate, setNewVaccineDate] = useState('');
+  const [newVaccineType, setNewVaccineType] = useState<VaccineType | ''>('');
+  const [newVaccineNote, setNewVaccineNote] = useState('');
+  const [showVaccineInfo, setShowVaccineInfo] = useState(false);
+  const [editingVaccineId, setEditingVaccineId] = useState<string | null>(null);
+  const [editVaccineDate, setEditVaccineDate] = useState('');
+  const [editVaccineType, setEditVaccineType] = useState<VaccineType | ''>('');
+  const [editVaccineNote, setEditVaccineNote] = useState('');
 
   useEffect(() => {
     loadData();
@@ -340,6 +352,164 @@ export const PetSettings: React.FC = () => {
     }
   };
 
+  // Calculate age at vaccination date
+  const calculateAgeAtDate = (birthday: string, vaccineDate: string): string => {
+    const birthDate = new Date(birthday);
+    const vDate = new Date(vaccineDate);
+
+    let years = vDate.getFullYear() - birthDate.getFullYear();
+    let months = vDate.getMonth() - birthDate.getMonth();
+
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+
+    if (vDate.getDate() < birthDate.getDate()) {
+      months--;
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+    }
+
+    if (years > 0) {
+      return months > 0 ? `${years}歲${months}個月` : `${years}歲`;
+    }
+    return `${months}個月`;
+  };
+
+  // Get vaccine options based on pet type
+  const getVaccineOptions = (): { value: VaccineType; label: string }[] => {
+    if (!selectedPet) return [];
+    if (selectedPet.type === 'cat') {
+      return Object.entries(CAT_VACCINE_LABELS).map(([value, label]) => ({
+        value: value as CatVaccineType,
+        label,
+      }));
+    }
+    if (selectedPet.type === 'dog') {
+      return Object.entries(DOG_VACCINE_LABELS).map(([value, label]) => ({
+        value: value as DogVaccineType,
+        label,
+      }));
+    }
+    return [];
+  };
+
+  // Get vaccine label
+  const getVaccineLabel = (vaccineType: VaccineType): string => {
+    if (selectedPet?.type === 'cat') {
+      return CAT_VACCINE_LABELS[vaccineType as CatVaccineType] || vaccineType;
+    }
+    if (selectedPet?.type === 'dog') {
+      return DOG_VACCINE_LABELS[vaccineType as DogVaccineType] || vaccineType;
+    }
+    return vaccineType;
+  };
+
+  // Add vaccine record
+  const handleAddVaccine = async () => {
+    if (!selectedPet || !user || !newVaccineDate || !newVaccineType) return;
+
+    setIsSaving(true);
+    try {
+      // Build record object - Firestore doesn't accept undefined values
+      const newRecord: VaccineRecord = {
+        id: Date.now().toString(),
+        vaccineType: newVaccineType as VaccineType,
+        date: newVaccineDate,
+        createdAt: Date.now(),
+        createdBy: user.uid,
+      };
+      // Only add note if it has content
+      if (newVaccineNote.trim()) {
+        newRecord.note = newVaccineNote.trim();
+      }
+
+      const updatedRecords = [...(selectedPet.vaccineRecords || []), newRecord];
+      // Sort by date descending (newest first)
+      updatedRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      await updatePet(selectedPet.id, { vaccineRecords: updatedRecords });
+      setPets(pets.map(p => p.id === selectedPet.id ? { ...p, vaccineRecords: updatedRecords } : p));
+
+      // Reset form
+      setNewVaccineDate('');
+      setNewVaccineType('');
+      setNewVaccineNote('');
+      setShowAddVaccine(false);
+    } catch (error) {
+      alert('新增失敗，請重試');
+    }
+    setIsSaving(false);
+  };
+
+  // Delete vaccine record
+  const handleDeleteVaccine = async (recordId: string) => {
+    if (!selectedPet || !window.confirm('確定要刪除此疫苗紀錄嗎？')) return;
+
+    setIsSaving(true);
+    try {
+      const updatedRecords = (selectedPet.vaccineRecords || []).filter(r => r.id !== recordId);
+      await updatePet(selectedPet.id, { vaccineRecords: updatedRecords });
+      setPets(pets.map(p => p.id === selectedPet.id ? { ...p, vaccineRecords: updatedRecords } : p));
+    } catch (error) {
+      alert('刪除失敗，請重試');
+    }
+    setIsSaving(false);
+  };
+
+  // Start editing a vaccine record
+  const startEditVaccine = (record: VaccineRecord) => {
+    setEditingVaccineId(record.id);
+    setEditVaccineDate(record.date);
+    setEditVaccineType(record.vaccineType);
+    setEditVaccineNote(record.note || '');
+  };
+
+  // Cancel editing vaccine
+  const cancelEditVaccine = () => {
+    setEditingVaccineId(null);
+    setEditVaccineDate('');
+    setEditVaccineType('');
+    setEditVaccineNote('');
+  };
+
+  // Update vaccine record
+  const handleUpdateVaccine = async () => {
+    if (!selectedPet || !editingVaccineId || !editVaccineDate || !editVaccineType) return;
+
+    setIsSaving(true);
+    try {
+      const updatedRecords = (selectedPet.vaccineRecords || []).map(r => {
+        if (r.id === editingVaccineId) {
+          const updated: VaccineRecord = {
+            ...r,
+            date: editVaccineDate,
+            vaccineType: editVaccineType as VaccineType,
+          };
+          if (editVaccineNote.trim()) {
+            updated.note = editVaccineNote.trim();
+          } else {
+            delete updated.note;
+          }
+          return updated;
+        }
+        return r;
+      });
+      // Sort by date descending
+      updatedRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      await updatePet(selectedPet.id, { vaccineRecords: updatedRecords });
+      setPets(pets.map(p => p.id === selectedPet.id ? { ...p, vaccineRecords: updatedRecords } : p));
+      cancelEditVaccine();
+    } catch (error) {
+      alert('更新失敗，請重試');
+    }
+    setIsSaving(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -440,7 +610,7 @@ export const PetSettings: React.FC = () => {
         <section className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
           <h3 className="text-lg font-bold text-stone-700 mb-4 flex items-center gap-2">
             <span className="text-2xl">{PET_TYPE_ICONS[selectedPet.type]}</span>
-            寵物資料
+            寵物基本資料
           </h3>
 
           <div className="space-y-4">
@@ -682,6 +852,253 @@ export const PetSettings: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Vaccine Records - Only for cats and dogs */}
+            {(selectedPet.type === 'cat' || selectedPet.type === 'dog') && (
+              <div className="pt-4 mt-4 border-t border-stone-100">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Syringe className="w-4 h-4 text-blue-500" />
+                    <span className="text-stone-600 font-medium">疫苗紀錄</span>
+                  </div>
+                  <button
+                    onClick={() => setEditingVaccines(!editingVaccines)}
+                    className="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    {editingVaccines ? '完成' : '修改'}
+                  </button>
+                </div>
+
+                {/* Vaccine List */}
+                <div className="space-y-2">
+                  {(selectedPet.vaccineRecords || []).length === 0 ? (
+                    <p className="text-sm text-stone-400 py-2">尚無疫苗紀錄</p>
+                  ) : (
+                    (selectedPet.vaccineRecords || []).map((record) => (
+                      <div key={record.id}>
+                        {editingVaccineId === record.id ? (
+                          // Edit form for this vaccine
+                          <div className="p-4 bg-stone-50 rounded-xl space-y-3">
+                            <div>
+                              <label className="block text-sm text-stone-600 mb-1">施打日期</label>
+                              <input
+                                type="date"
+                                value={editVaccineDate}
+                                onChange={(e) => setEditVaccineDate(e.target.value)}
+                                className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm text-stone-600 mb-1">疫苗種類</label>
+                              <select
+                                value={editVaccineType}
+                                onChange={(e) => setEditVaccineType(e.target.value as VaccineType)}
+                                className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+                              >
+                                <option value="">請選擇疫苗種類</option>
+                                {getVaccineOptions().map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm text-stone-600 mb-1">附註（選填）</label>
+                              <input
+                                type="text"
+                                value={editVaccineNote}
+                                onChange={(e) => setEditVaccineNote(e.target.value)}
+                                placeholder="例如：第一劑、診所名稱..."
+                                className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                              />
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                              <button
+                                onClick={handleUpdateVaccine}
+                                disabled={isSaving || !editVaccineDate || !editVaccineType}
+                                className="flex-1 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                              >
+                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                儲存
+                              </button>
+                              <button
+                                onClick={() => handleDeleteVaccine(record.id)}
+                                disabled={isSaving}
+                                className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={cancelEditVaccine}
+                                className="px-4 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          // Display vaccine record
+                          <div className="flex items-center justify-between py-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-stone-700 font-medium">{record.date}</span>
+                                <span className="text-stone-400 text-sm">
+                                  ({calculateAgeAtDate(selectedPet.birthday, record.date)})
+                                </span>
+                                <span className="text-blue-600 font-medium">{getVaccineLabel(record.vaccineType)}</span>
+                              </div>
+                              {record.note && (
+                                <p className="text-stone-400 text-sm mt-0.5">{record.note}</p>
+                              )}
+                            </div>
+                            {editingVaccines && (
+                              <button
+                                onClick={() => startEditVaccine(record)}
+                                className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors ml-2 flex-shrink-0"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Add Vaccine Button/Form */}
+                {editingVaccines && (
+                  <div className="mt-3">
+                    {!showAddVaccine ? (
+                      <button
+                        onClick={() => setShowAddVaccine(true)}
+                        className="w-full flex items-center justify-center gap-2 py-3 text-blue-600 font-medium bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+                      >
+                        <Plus className="w-5 h-5" />
+                        新增疫苗紀錄
+                      </button>
+                    ) : (
+                      <div className="p-4 bg-stone-50 rounded-xl space-y-3">
+                        <div>
+                          <label className="block text-sm text-stone-600 mb-1">施打日期</label>
+                          <input
+                            type="date"
+                            value={newVaccineDate}
+                            onChange={(e) => setNewVaccineDate(e.target.value)}
+                            className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm text-stone-600 mb-1">疫苗種類</label>
+                          <select
+                            value={newVaccineType}
+                            onChange={(e) => setNewVaccineType(e.target.value as VaccineType)}
+                            className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+                          >
+                            <option value="">請選擇疫苗種類</option>
+                            {getVaccineOptions().map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm text-stone-600 mb-1">附註（選填）</label>
+                          <input
+                            type="text"
+                            value={newVaccineNote}
+                            onChange={(e) => setNewVaccineNote(e.target.value)}
+                            placeholder="例如：第一劑、診所名稱..."
+                            className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={handleAddVaccine}
+                            disabled={isSaving || !newVaccineDate || !newVaccineType}
+                            className="flex-1 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            新增
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowAddVaccine(false);
+                              setNewVaccineDate('');
+                              setNewVaccineType('');
+                              setNewVaccineNote('');
+                            }}
+                            className="px-4 py-2 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Vaccine Info Section */}
+                <div className="mt-4">
+                  <button
+                    onClick={() => setShowVaccineInfo(!showVaccineInfo)}
+                    className="flex items-center gap-1 text-sm text-stone-400 hover:text-stone-600 transition-colors"
+                  >
+                    {showVaccineInfo ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    疫苗施打時間參考
+                  </button>
+                  {showVaccineInfo && (
+                    <div className="mt-3 p-4 bg-stone-50 rounded-xl text-xs text-stone-500 space-y-3">
+                      {selectedPet.type === 'cat' ? (
+                        <>
+                          <div>
+                            <p className="font-bold text-stone-600 mb-1">施打時間</p>
+                            <ul className="space-y-1 list-disc list-inside">
+                              <li>8-9 週：FVRCP（第一劑）+ FeLV（若有需求，需先快篩）</li>
+                              <li>12-13 週：FVRCP（第二劑）+ FeLV（第二劑）</li>
+                              <li>16 週以上：FVRCP（第三劑）+ Rabies（若法規要求）</li>
+                              <li>補強劑（Booster）：基礎疫苗完成後 1 年施打一次；之後視風險評估每 1-3 年施打一次</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="font-bold text-stone-600 mb-1">三合一 FVRCP</p>
+                            <ul className="space-y-1 list-disc list-inside">
+                              <li>FHV-1（Feline Viral Rhinotracheitis）：貓疱疹，鼻氣管炎</li>
+                              <li>FCV（Feline Calicivirus）：貓卡里西，引起口鼻部疾病</li>
+                              <li>FPV（Feline Panleukopenia）：貓瘟，泛白細胞減少症，致死率高</li>
+                            </ul>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>
+                            <p className="font-bold text-stone-600 mb-1">施打時間</p>
+                            <ul className="space-y-1 list-disc list-inside">
+                              <li>6-8 週：DHPPi（第一劑）</li>
+                              <li>10-12 週：DHPPi（第二劑）+ Leptospirosis（第一劑）</li>
+                              <li>14-16 週：DHPPi（第三劑）+ Leptospirosis（第二劑）+ Rabies</li>
+                              <li>補強劑（Booster）：基礎完成後 1 年施打一次；之後 Core 可每 3 年補強，但 Leptospirosis 與 Rabies 建議每年補強</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="font-bold text-stone-600 mb-1">多合一疫苗</p>
+                            <ul className="space-y-1 list-disc list-inside">
+                              <li>Distemper（CDV, 犬瘟熱）</li>
+                              <li>Infectious Hepatitis（CAV-1, 犬傳染性肝炎）</li>
+                              <li>Parvovirus（CPV-2, 犬小病毒）</li>
+                              <li>Parainfluenza（CPiV, 犬副流感病毒）</li>
+                              <li>Rabies（狂犬病疫苗）</li>
+                            </ul>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -798,26 +1215,6 @@ export const PetSettings: React.FC = () => {
             className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-colors"
           >
             新增寵物
-          </button>
-        </section>
-      )}
-
-      {/* Data Migration Section - Only visible to admin */}
-      {(userProfile?.email === 'vecear@gmail.com' || userProfile?.displayName === 'CCL') && (
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
-          <h3 className="text-lg font-bold text-stone-700 mb-4 flex items-center gap-2">
-            <Database className="w-5 h-5 text-amber-500" />
-            資料工具
-          </h3>
-          <button
-            onClick={() => navigate('/migrate')}
-            className="w-full p-4 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-all flex items-center gap-3 text-left"
-          >
-            <Database className="w-6 h-6 text-amber-600" />
-            <div>
-              <p className="font-bold text-amber-800">資料遷移工具</p>
-              <p className="text-sm text-amber-600">遷移舊資料或更新原有主人資料</p>
-            </div>
           </button>
         </section>
       )}

@@ -143,6 +143,7 @@ export interface Pet {
   createdAt: number; // timestamp
   actionOrder?: string[];
   actionLabels?: Record<string, string>; // Custom labels for actions (affects all co-caregivers)
+  vaccineRecords?: VaccineRecord[]; // Vaccine history
 }
 
 // Home page card visibility settings
@@ -182,6 +183,52 @@ export interface UserProfile {
   hiddenActions?: Record<string, string[]>; // Per-pet hidden actions (petId -> hidden action ids)
   caregiverOrders?: Record<string, string[]>; // Per-pet caregiver order (petId -> array of user IDs)
   homeCardSettings?: Record<string, HomeCardSettings>; // Per-pet home card visibility settings
+}
+
+// Vaccine types for cats
+export type CatVaccineType =
+  | 'FVRCP'           // 三合一
+  | 'FVRCP_CHLAMYDIA' // 四合一 (FVRCP + 披衣菌)
+  | 'FVRCP_CHLAMYDIA_FELV' // 五合一 (FVRCP + 披衣菌 + 貓白血病)
+  | 'FELV'            // 貓白血病
+  | 'RABIES'          // 狂犬病
+  | 'FIV';            // 貓愛滋
+
+// Vaccine types for dogs
+export type DogVaccineType =
+  | 'DHPPI'           // 多合一疫苗
+  | 'LEPTOSPIROSIS'   // 鉤端螺旋體
+  | 'RABIES'          // 狂犬病
+  | 'BORDETELLA'      // 肯尼氏咳/支氣管敗血桿菌
+  | 'LYME';           // 萊姆病
+
+export type VaccineType = CatVaccineType | DogVaccineType;
+
+export const CAT_VACCINE_LABELS: Record<CatVaccineType, string> = {
+  FVRCP: '三合一 (FVRCP)',
+  FVRCP_CHLAMYDIA: '四合一 (FVRCP + 披衣菌)',
+  FVRCP_CHLAMYDIA_FELV: '五合一 (FVRCP + 披衣菌 + 貓白血病)',
+  FELV: '貓白血病 (FeLV)',
+  RABIES: '狂犬病 (Rabies)',
+  FIV: '貓愛滋 (FIV)',
+};
+
+export const DOG_VACCINE_LABELS: Record<DogVaccineType, string> = {
+  DHPPI: '多合一疫苗 (DHPPi)',
+  LEPTOSPIROSIS: '鉤端螺旋體 (Leptospirosis)',
+  RABIES: '狂犬病 (Rabies)',
+  BORDETELLA: '肯尼氏咳/支氣管敗血桿菌 (Bordetella)',
+  LYME: '萊姆病 (Lyme Disease)',
+};
+
+// Vaccine record
+export interface VaccineRecord {
+  id: string;
+  vaccineType: VaccineType;
+  date: string; // YYYY-MM-DD
+  note?: string;
+  createdAt: number;
+  createdBy: string; // User ID
 }
 
 // Care request for co-caring pets
