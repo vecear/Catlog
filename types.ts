@@ -145,6 +145,28 @@ export interface Pet {
   actionLabels?: Record<string, string>; // Custom labels for actions (affects all co-caregivers)
 }
 
+// Home page card visibility settings
+export interface HomeCardSettings {
+  showScoreboard: boolean; // 愛的積分 (寵物更愛誰)
+  showTodayTasks: boolean; // 今日任務
+  hiddenTodayTaskItems?: string[]; // Hidden items in today's tasks (e.g., ['grooming', 'medication'])
+  showWeightChart: boolean; // 體重變化
+  weightChartType: 'days' | 'entries'; // Show by recent days or recent entries
+  weightChartValue: number; // Number of days or entries to show
+  monthlyLogsDefaultDays: number; // Default number of days to show in monthly logs (3, 5, 7, or 0 for all)
+}
+
+// Default home card settings
+export const DEFAULT_HOME_CARD_SETTINGS: HomeCardSettings = {
+  showScoreboard: true,
+  showTodayTasks: true,
+  hiddenTodayTaskItems: [],
+  showWeightChart: true,
+  weightChartType: 'entries',
+  weightChartValue: 10,
+  monthlyLogsDefaultDays: 3,
+};
+
 // User profile for the new multi-user system
 export interface UserProfile {
   id: string; // Firebase Auth UID
@@ -159,6 +181,7 @@ export interface UserProfile {
   actionOrders?: Record<string, string[]>; // Per-pet action order preferences (petId -> order)
   hiddenActions?: Record<string, string[]>; // Per-pet hidden actions (petId -> hidden action ids)
   caregiverOrders?: Record<string, string[]>; // Per-pet caregiver order (petId -> array of user IDs)
+  homeCardSettings?: Record<string, HomeCardSettings>; // Per-pet home card visibility settings
 }
 
 // Care request for co-caring pets

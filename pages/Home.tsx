@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, CalendarDays, Sparkles, Droplets, XCircle, CheckCircle, HelpCircle, AlertCircle, Trash2, Edit, RefreshCw, Settings as SettingsIcon, Scale, ChevronUp, ChevronLeft, ChevronRight, ShowerHead, Bug, Clock, LogOut, User, Cat, ListChecks } from 'lucide-react';
 import { StatusCard } from '../components/StatusCard';
-import { CareLog, UserProfile, CareRequest, PET_TYPE_ICONS } from '../types';
+import { CareLog, UserProfile, CareRequest, PET_TYPE_ICONS, HomeCardSettings, DEFAULT_HOME_CARD_SETTINGS } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { usePet } from '../context/PetContext';
@@ -347,6 +347,14 @@ export const Home: React.FC = () => {
     return sorted;
   }, [selectedPet, selectedPetOwners, userProfile?.caregiverOrders]);
 
+  // Get home card settings for selected pet
+  const cardSettings = useMemo((): HomeCardSettings => {
+    if (!selectedPet || !userProfile?.homeCardSettings?.[selectedPet.id]) {
+      return DEFAULT_HOME_CARD_SETTINGS;
+    }
+    return { ...DEFAULT_HOME_CARD_SETTINGS, ...userProfile.homeCardSettings[selectedPet.id] };
+  }, [selectedPet, userProfile?.homeCardSettings]);
+
   // Find winner
   const getWinner = () => {
     if (selectedPetOwners.length === 0) return null;
@@ -401,9 +409,20 @@ export const Home: React.FC = () => {
       }
     });
 
-    return Array.from(weightByDate.values())
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .map(({ date, weight }) => ({ date, weight }));
+    let result = Array.from(weightByDate.values())
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    // Apply filter based on card settings
+    if (cardSettings.weightChartType === 'entries') {
+      // Show last N entries
+      result = result.slice(-cardSettings.weightChartValue);
+    } else {
+      // Show last N days
+      const cutoffTime = Date.now() - (cardSettings.weightChartValue * 24 * 60 * 60 * 1000);
+      result = result.filter(item => item.timestamp >= cutoffTime);
+    }
+
+    return result.map(({ date, weight }) => ({ date, weight }));
   };
   const weightChartData = getWeightChartData();
   const hasWeightData = weightChartData.length > 0;
@@ -687,131 +706,137 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Desktop: Two Column Layout / Mobile: Stack */}
-      <div className="md:grid md:grid-cols-5 md:gap-6">
-        {/* Left Column - Scoreboard & Weight */}
-        <div className="md:col-span-2 space-y-6">
-          {/* Weekly Scoreboard */}
-          <section>
-            <div className="bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-rose-50/30 rounded-2xl p-4 mb-4 md:mb-0 border border-amber-200/50 shadow-sm">
-              <h3 className="text-center font-bold text-stone-600 mb-1">
-                {winnerInfo?.type === 'none' ? (
-                  <>本週{petName}<span className="text-rose-500 text-xl font-black">還沒有愛</span></>
-                ) : winnerInfo?.type === 'tie' ? (
-                  <>本週{petName}愛大家<span className="text-amber-600 text-xl font-black">一樣多</span></>
-                ) : winnerInfo?.type === 'winner' ? (
-                  <>本週{petName}更愛 <span style={{ color: getOwnerByName(winnerInfo.name)?.color }} className="text-xl font-black">{winnerInfo.name}</span></>
-                ) : null}
-              </h3>
-              <p className="text-center text-xs text-stone-400 mb-2">本週給{petName}的愛 ({weekRange})</p>
-              <div className="flex justify-center gap-4 items-center text-sm font-medium mb-2 flex-wrap">
-                {sortedPetOwners.map((owner, index) => {
-                  const score = ownerScores[owner.displayName] || 0;
-                  const maxScore = Math.max(...Object.values(ownerScores));
-                  const isWinning = score === maxScore && score > 0;
-                  return (
-                    <React.Fragment key={owner.id}>
-                      {index > 0 && <div className="h-4 w-px bg-stone-300"></div>}
-                      <div
-                        className={`text-center ${isWinning ? 'scale-110 font-bold' : ''} transition-transform`}
-                        style={{ color: owner.color }}
-                      >
-                        {owner.displayName}: <span className="text-lg">{score}</span> 分
-                      </div>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-              <p className="text-center text-xs text-stone-400 mb-1">全部累積總分</p>
-              <div className="text-center text-xs text-stone-400 mb-4">
-                {sortedPetOwners.map((owner, index) => (
-                  <span key={owner.id}>
-                    {index > 0 && '，'}
-                    <span style={{ color: owner.color }} className="font-medium">{owner.displayName}</span>
-                    累積<span style={{ color: owner.color }} className="font-medium">{allTimeTotals[owner.displayName] || 0}</span>分愛
-                  </span>
-                ))}
-              </div>
+      <div className={`md:grid md:gap-6 ${cardSettings.showScoreboard && cardSettings.showTodayTasks ? 'md:grid-cols-5' : ''}`}>
+        {/* Left Column - Scoreboard */}
+        {cardSettings.showScoreboard && (
+          <div className={`${cardSettings.showTodayTasks ? 'md:col-span-2' : ''} space-y-6`}>
+            {/* Weekly Scoreboard */}
+            <section>
+              <div className="bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-rose-50/30 rounded-2xl p-4 mb-4 md:mb-0 border border-amber-200/50 shadow-sm">
+                <h3 className="text-center font-bold text-stone-600 mb-1">
+                  {winnerInfo?.type === 'none' ? (
+                    <>本週{petName}<span className="text-rose-500 text-xl font-black">還沒有愛</span></>
+                  ) : winnerInfo?.type === 'tie' ? (
+                    <>本週{petName}愛大家<span className="text-amber-600 text-xl font-black">一樣多</span></>
+                  ) : winnerInfo?.type === 'winner' ? (
+                    <>本週{petName}更愛 <span style={{ color: getOwnerByName(winnerInfo.name)?.color }} className="text-xl font-black">{winnerInfo.name}</span></>
+                  ) : null}
+                </h3>
+                <p className="text-center text-xs text-stone-400 mb-2">本週給{petName}的愛 ({weekRange})</p>
+                <div className="flex justify-center gap-4 items-center text-sm font-medium mb-2 flex-wrap">
+                  {sortedPetOwners.map((owner, index) => {
+                    const score = ownerScores[owner.displayName] || 0;
+                    const maxScore = Math.max(...Object.values(ownerScores));
+                    const isWinning = score === maxScore && score > 0;
+                    return (
+                      <React.Fragment key={owner.id}>
+                        {index > 0 && <div className="h-4 w-px bg-stone-300"></div>}
+                        <div
+                          className={`text-center ${isWinning ? 'scale-110 font-bold' : ''} transition-transform`}
+                          style={{ color: owner.color }}
+                        >
+                          {owner.displayName}: <span className="text-lg">{score}</span> 分
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+                <p className="text-center text-xs text-stone-400 mb-1">全部累積總分</p>
+                <div className="text-center text-xs text-stone-400 mb-4">
+                  {sortedPetOwners.map((owner, index) => (
+                    <span key={owner.id}>
+                      {index > 0 && '，'}
+                      <span style={{ color: owner.color }} className="font-medium">{owner.displayName}</span>
+                      累積<span style={{ color: owner.color }} className="font-medium">{allTimeTotals[owner.displayName] || 0}</span>分愛
+                    </span>
+                  ))}
+                </div>
 
-              <p className="text-center text-xs text-stone-400 mb-1">過去7天</p>
-              <div className="h-[72px] w-full mb-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fcd9b6" opacity={0.6} />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 10, fill: '#78716c' }}
-                      axisLine={false}
-                      tickLine={false}
-                      interval="preserveStartEnd"
-                      padding={{ left: 20, right: 20 }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 10, fill: '#78716c' }}
-                      axisLine={false}
-                      tickLine={false}
-                      allowDecimals={false}
-                    />
-                    <Tooltip
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      itemStyle={{ fontSize: '12px' }}
-                      labelStyle={{ fontSize: '12px', color: '#78716c', marginBottom: '4px' }}
-                    />
-                    {sortedPetOwners.map(owner => (
-                      <Line
-                        key={owner.id}
-                        type="monotone"
-                        dataKey={owner.displayName}
-                        stroke={owner.color}
-                        strokeWidth={2}
-                        dot={{ r: 3, fill: owner.color, strokeWidth: 0 }}
-                        activeDot={{ r: 5 }}
+                <p className="text-center text-xs text-stone-400 mb-1">過去7天</p>
+                <div className="h-[72px] w-full mb-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fcd9b6" opacity={0.6} />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 10, fill: '#78716c' }}
+                        axisLine={false}
+                        tickLine={false}
+                        interval="preserveStartEnd"
+                        padding={{ left: 20, right: 20 }}
                       />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+                      <YAxis
+                        tick={{ fontSize: 10, fill: '#78716c' }}
+                        axisLine={false}
+                        tickLine={false}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        itemStyle={{ fontSize: '12px' }}
+                        labelStyle={{ fontSize: '12px', color: '#78716c', marginBottom: '4px' }}
+                      />
+                      {sortedPetOwners.map(owner => (
+                        <Line
+                          key={owner.id}
+                          type="monotone"
+                          dataKey={owner.displayName}
+                          stroke={owner.color}
+                          strokeWidth={2}
+                          dot={{ r: 3, fill: owner.color, strokeWidth: 0 }}
+                          activeDot={{ r: 5 }}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
 
-              <div className="text-[10px] text-stone-400 text-center mt-2 bg-white/50 rounded-lg py-1.5 px-2">
-                梳毛 +3 ｜ 飼料/水/藥/保健/體重 +2 ｜ 貓砂 乾淨+1 髒+4
+                <div className="text-[10px] text-stone-400 text-center mt-2 bg-white/50 rounded-lg py-1.5 px-2">
+                  梳毛 +3 ｜ 飼料/水/藥/保健/體重 +2 ｜ 貓砂 乾淨+1 髒+4
+                </div>
               </div>
-            </div>
-          </section>
-        </div>
+            </section>
+          </div>
+        )}
 
         {/* Right Column - Today's Tasks */}
-        <div className="md:col-span-3">
-          {/* Today's Status Section */}
-          <section>
-            <div className="flex items-center gap-2 mb-2 px-1 md:px-0">
-              <CheckCircle className="w-5 h-5 text-amber-500" />
-              <h2 className="text-xl font-bold text-stone-700">今日任務</h2>
-            </div>
-            <div className="text-xs text-stone-400 mb-4 px-1 md:px-0 bg-stone-50 rounded-lg py-1.5 px-3 inline-block">
-              早 06-10 ｜ 中 11-16 ｜ 晚 17-22 ｜ 睡 23-05
-            </div>
+        {cardSettings.showTodayTasks && (
+          <div className={`${cardSettings.showScoreboard ? 'md:col-span-3' : ''}`}>
+            {/* Today's Status Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-2 px-1 md:px-0">
+                <CheckCircle className="w-5 h-5 text-amber-500" />
+                <h2 className="text-xl font-bold text-stone-700">今日任務</h2>
+              </div>
+              <div className="text-xs text-stone-400 mb-4 px-1 md:px-0 bg-stone-50 rounded-lg py-1.5 px-3 inline-block">
+                早 06-10 ｜ 中 11-16 ｜ 晚 17-22 ｜ 睡 23-05
+              </div>
 
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-              {(userProfile?.actionOrders?.[selectedPet.id] || ['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'deworming', 'bath', 'weight']).map((actionType) => {
-                // Only render StatusCard for supported types
-                const validTypes = ['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'weight'] as const;
-                if (!validTypes.includes(actionType as any)) return null;
-                const type = actionType as typeof validTypes[number];
-                return (
-                  <StatusCard
-                    key={type}
-                    type={type}
-                    progress={todayStatus[type]}
-                    customLabel={selectedPet.actionLabels?.[type]}
-                  />
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                {(userProfile?.actionOrders?.[selectedPet.id] || ['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'deworming', 'bath', 'weight']).map((actionType) => {
+                  // Only render StatusCard for supported types
+                  const validTypes = ['food', 'water', 'litter', 'grooming', 'medication', 'supplements', 'weight'] as const;
+                  if (!validTypes.includes(actionType as any)) return null;
+                  // Check if this item is hidden in today tasks card settings
+                  if ((cardSettings.hiddenTodayTaskItems || []).includes(actionType)) return null;
+                  const type = actionType as typeof validTypes[number];
+                  return (
+                    <StatusCard
+                      key={type}
+                      type={type}
+                      progress={todayStatus[type]}
+                      customLabel={selectedPet.actionLabels?.[type]}
+                    />
                 );
               })}
             </div>
           </section>
         </div>
+        )}
       </div>
 
       {/* Weight Chart Section */}
-      {hasWeightData && (
+      {cardSettings.showWeightChart && hasWeightData && (
         <section className="mb-6">
           <div className="flex items-center gap-2 mb-2 px-1 md:px-0">
             <Scale className="w-5 h-5 text-amber-500" />
@@ -935,7 +960,7 @@ export const Home: React.FC = () => {
             </div>
           ) : (
             <>
-              {(isExpanded ? monthlyLogs : monthlyLogs.slice(0, 3)).map((dayGroup) => (
+              {(isExpanded || cardSettings.monthlyLogsDefaultDays === 0 ? monthlyLogs : monthlyLogs.slice(0, cardSettings.monthlyLogsDefaultDays)).map((dayGroup) => (
                 <div key={dayGroup.date} className="animate-fade-in-up">
                   <h3 className="text-sm font-bold text-stone-400 mb-2 pl-1 flex items-center gap-2">
                     <span>{dayGroup.date}</span>
@@ -1011,7 +1036,7 @@ export const Home: React.FC = () => {
                   </div>
                 </div>
               ))}
-              {!isExpanded && monthlyLogs.length > 3 && (
+              {!isExpanded && cardSettings.monthlyLogsDefaultDays !== 0 && monthlyLogs.length > cardSettings.monthlyLogsDefaultDays && (
                 <button
                   onClick={() => setIsExpanded(true)}
                   className="w-full py-3 text-amber-700 font-bold text-sm bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200/50 shadow-sm hover:from-amber-100 hover:to-orange-100 transition-all flex items-center justify-center gap-2 mt-4"
@@ -1020,19 +1045,22 @@ export const Home: React.FC = () => {
                   <span>顯示當月所有紀錄 ({monthlyLogs.length} 天)</span>
                 </button>
               )}
-              {isExpanded && monthlyLogs.length > 3 && (
+              {isExpanded && cardSettings.monthlyLogsDefaultDays !== 0 && monthlyLogs.length > cardSettings.monthlyLogsDefaultDays && (
                 <button
                   onClick={() => setIsExpanded(false)}
                   className="w-full py-3 text-stone-600 font-bold text-sm bg-gradient-to-r from-stone-50 to-stone-100 rounded-xl border border-stone-200/50 shadow-sm hover:from-stone-100 hover:to-stone-200 transition-all flex items-center justify-center gap-2 mt-4"
                 >
                   <ChevronUp className="w-4 h-4" />
-                  <span>顯示近三天</span>
+                  <span>顯示近 {cardSettings.monthlyLogsDefaultDays} 天</span>
                 </button>
               )}
             </>
           )}
         </div>
       </section >
+
+      {/* Spacer for floating action button */}
+      <div className="h-24" />
 
       {/* Floating Action Button */}
       <div className="fixed bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">

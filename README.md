@@ -52,3 +52,48 @@
 - `context/`: React Context (AuthContext, PetContext)
 - `services/`: Firebase 與 API 介面
 - `types.ts`: TypeScript 定義
+
+## 設定資料架構
+
+PetLog 的設定分為兩種類型：**個人設定** 和 **共享設定**。
+
+### 個人設定 (儲存於 `UserProfile`)
+
+這些設定僅影響當前使用者，不會影響其他共同照顧人的介面：
+
+| 設定項目 | 欄位名稱 | 說明 |
+|---------|---------|------|
+| 項目順序 | `actionOrders` | 紀錄頁面的項目排列順序 (per-pet) |
+| 隱藏項目 | `hiddenActions` | 紀錄頁面中隱藏的項目 (per-pet) |
+| 照顧者順序 | `caregiverOrders` | 照顧者顯示順序 (per-pet) |
+| 首頁卡片設定 | `homeCardSettings` | 首頁卡片顯示/隱藏設定 (per-pet) |
+
+#### 首頁卡片設定 (`HomeCardSettings`)
+
+```typescript
+interface HomeCardSettings {
+  showScoreboard: boolean;       // 愛的積分卡片顯示/隱藏
+  showTodayTasks: boolean;       // 今日任務卡片顯示/隱藏
+  hiddenTodayTaskItems?: string[]; // 今日任務中隱藏的子項目
+  showWeightChart: boolean;      // 體重變化卡片顯示/隱藏
+  weightChartType: 'days' | 'entries'; // 體重圖表顯示模式
+  weightChartValue: number;      // 顯示的天數或筆數
+  monthlyLogsDefaultDays: number; // 月份紀錄預設展開天數 (3/5/7/0=全部)
+}
+```
+
+### 共享設定 (儲存於 `Pet`)
+
+這些設定會影響所有共同照顧人：
+
+| 設定項目 | 欄位名稱 | 說明 |
+|---------|---------|------|
+| 項目名稱 | `actionLabels` | 自訂項目名稱 (如：飼料 -> 給罐罐) |
+
+### 設定頁面分類
+
+| 頁面 | 路徑 | 內容 |
+|-----|------|------|
+| 個人資料 | `/settings/profile` | 使用者名稱、顏色、帳號綁定 |
+| 寵物資料 | `/settings/pet` | 寵物資訊、照顧者管理 |
+| 介面設定 | `/settings/interface` | 項目順序、首頁卡片設定 |
