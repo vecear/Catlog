@@ -94,5 +94,79 @@ export interface WeightLog {
   id: string;
   timestamp: number;
   weight: number; // in kg, e.g. 4.5
-  author: 'RURU' | 'CCL';
+  author: string;
+}
+
+// Pet types for the new multi-user system
+export type PetType = 'cat' | 'dog' | 'fish' | 'duck' | 'rabbit' | 'mouse' | 'lizard';
+
+export const PET_TYPE_LABELS: Record<PetType, string> = {
+  cat: '貓',
+  dog: '狗',
+  fish: '魚',
+  duck: '鴨子',
+  rabbit: '兔子',
+  mouse: '鼠',
+  lizard: '蜥蜴',
+};
+
+export const PET_TYPE_ICONS: Record<PetType, string> = {
+  cat: '🐱',
+  dog: '🐕',
+  fish: '🐟',
+  duck: '🦆',
+  rabbit: '🐰',
+  mouse: '🐭',
+  lizard: '🦎',
+};
+
+export type PetGender = 'male' | 'female' | 'unknown';
+
+export const PET_GENDER_LABELS: Record<PetGender, string> = {
+  male: '公',
+  female: '母',
+  unknown: '不確定',
+};
+
+// New Pet structure for multi-user system
+export interface Pet {
+  id: string; // 6-digit unique ID
+  name: string;
+  type: PetType;
+  birthday: string; // YYYY-MM-DD
+  gender: PetGender;
+  adoptionDate: string; // YYYY-MM-DD - when pet joined the family
+  ownerIds: string[]; // Array of user IDs who can care for this pet
+  createdBy: string; // User ID who created this pet
+  createdAt: number; // timestamp
+  actionOrder?: string[];
+}
+
+// User profile for the new multi-user system
+export interface UserProfile {
+  id: string; // Firebase Auth UID
+  displayName: string;
+  email: string;
+  color: string; // User's display color
+  linkedProviders: ('google' | 'password')[]; // Which auth methods are linked
+  petIds: string[]; // Array of pet IDs the user cares for
+  onboardingComplete: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// Care request for co-caring pets
+export type CareRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface CareRequest {
+  id: string;
+  petId: string;
+  petName: string;
+  requesterId: string; // User ID who wants to join
+  requesterName: string;
+  requesterEmail: string;
+  ownerId: string; // Pet owner who needs to approve
+  status: CareRequestStatus;
+  createdAt: number;
+  respondedAt?: number;
 }

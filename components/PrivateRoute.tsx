@@ -8,7 +8,7 @@ interface PrivateRouteProps {
 }
 
 export const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-    const { user, loading, isAuthorized } = useAuth();
+    const { loading, isAuthenticated, needsOnboarding } = useAuth();
 
     if (loading) {
         return (
@@ -19,19 +19,13 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     }
 
     // If not logged in, redirect to login
-    if (!user) {
+    if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
     }
 
-    // If logged in but not authorized (not in whitelist), show access denied (or stay on login page which handles it)
-    // Actually, LoginPage handles the "Access Denied" view if user is logged in. 
-    // So validation logic:
-    // 1. Not logged in -> Login Page
-    // 2. Logged in + Not Authorized -> Login Page (which will show "Access Denied")
-    // 3. Logged in + Authorized -> Render Children
-
-    if (!isAuthorized) {
-        return <Navigate to="/login" replace />;
+    // If logged in but needs onboarding, redirect to onboarding
+    if (needsOnboarding) {
+        return <Navigate to="/onboarding" replace />;
     }
 
     return <>{children}</>;

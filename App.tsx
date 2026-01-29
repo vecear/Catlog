@@ -2,6 +2,8 @@ import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { OnboardingPage } from './pages/OnboardingPage';
 import { PrivateRoute } from './components/PrivateRoute';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
@@ -14,6 +16,8 @@ const App: React.FC = () => {
       <HashRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route
             path="/*"
             element={

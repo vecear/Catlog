@@ -1,33 +1,101 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // 驗證函式：檢查使用者是否已登入且在白名單內
-    function isAuthorized() {
-      return request.auth != null && 
-             (request.auth.token.email == 'vecear@gmail.com' ||
-              request.auth.token.email == 'feina0627@gmail.com');
+
+    // Helper function: Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // 1. 日誌 (logs)
+    // Helper function: Check if user owns this document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. Users collection - each user can only access their own profile
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // 2. Pets collection - accessible by owners
+    match /pets/{petId} {
+      // Anyone authenticated can read (needed for join requests)
+      allow read: if isAuthenticated();
+
+      // Create: authenticated user, must be in ownerIds
+      allow create: if isAuthenticated() &&
+                       request.resource.data.ownerIds.hasAny([request.auth.uid]);
+
+      // Update: must be one of the owners
+      allow update: if isAuthenticated() &&
+                       (resource.data.ownerIds.hasAny([request.auth.uid]) ||
+                        request.resource.data.ownerIds.hasAny([request.auth.uid]));
+
+      // Delete: must be the creator
+      allow delete: if isAuthenticated() &&
+                       resource.data.createdBy == request.auth.uid;
+
+      // Pet subcollections (logs, weight_logs)
+      match /logs/{logId} {
+        allow read: if isAuthenticated() &&
+                       get(/databases/$(database)/documents/pets/$(petId)).data.ownerIds.hasAny([request.auth.uid]);
+        allow create, update: if isAuthenticated() &&
+                                 get(/databases/$(database)/documents/pets/$(petId)).data.ownerIds.hasAny([request.auth.uid]) &&
+                                 request.resource.data.timestamp is number;
+        allow delete: if isAuthenticated() &&
+                         get(/databases/$(database)/documents/pets/$(petId)).data.ownerIds.hasAny([request.auth.uid]);
+      }
+
+      match /weight_logs/{logId} {
+        allow read: if isAuthenticated() &&
+                       get(/databases/$(database)/documents/pets/$(petId)).data.ownerIds.hasAny([request.auth.uid]);
+        allow create, update: if isAuthenticated() &&
+                                 get(/databases/$(database)/documents/pets/$(petId)).data.ownerIds.hasAny([request.auth.uid]) &&
+                                 request.resource.data.timestamp is number;
+        allow delete: if isAuthenticated() &&
+                         get(/databases/$(database)/documents/pets/$(petId)).data.ownerIds.hasAny([request.auth.uid]);
+      }
+    }
+
+    // 3. Care requests collection
+    match /care_requests/{requestId} {
+      // Read: requester or owner of the pet
+      allow read: if isAuthenticated() &&
+                     (resource.data.requesterId == request.auth.uid ||
+                      resource.data.ownerId == request.auth.uid);
+
+      // Create: authenticated user creating their own request
+      allow create: if isAuthenticated() &&
+                       request.resource.data.requesterId == request.auth.uid;
+
+      // Update: only the pet owner can respond
+      allow update: if isAuthenticated() &&
+                       resource.data.ownerId == request.auth.uid;
+
+      // Delete: requester or owner
+      allow delete: if isAuthenticated() &&
+                       (resource.data.requesterId == request.auth.uid ||
+                        resource.data.ownerId == request.auth.uid);
+    }
+
+    // 4. Legacy collections (for backward compatibility during migration)
+    // These can be removed after migration is complete
     match /logs/{logId} {
-      allow read, delete: if isAuthorized();
-      allow create, update: if isAuthorized() && request.resource.data.timestamp is number;
+      allow read, write: if isAuthenticated();
     }
-    
-    // 2. 體重記錄 (weight_logs)
+
     match /weight_logs/{logId} {
-      allow read, delete: if isAuthorized();
-      allow create, update: if isAuthorized() && request.resource.data.timestamp is number;
+      allow read, write: if isAuthenticated();
     }
-    
-    // 3. App 設定 (app_profile)
+
     match /app_profile/{docId} {
-      allow read, delete: if isAuthorized();
-      allow create, update: if isAuthorized() && request.resource.data.keys().hasAny(['owners', 'pet']);
+      allow read, write: if isAuthenticated();
     }
-    
-    // 4. 拒絕其他所有未知的路徑
+
+    // 5. Deny all other paths
     match /{document=**} {
       allow read, write: if false;
     }
