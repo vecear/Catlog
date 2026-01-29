@@ -122,7 +122,17 @@ export const LoginPage: React.FC = () => {
                     </div>
 
                     {/* Login Card */}
-                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 lg:bg-transparent lg:shadow-none lg:border-0 lg:p-0">
+                    <div className="relative px-2 py-6 lg:p-0">
+                        {/* Decorative bottom border for mobile - coffee colored elegant lines */}
+                        <div className="lg:hidden absolute -bottom-2 left-0 right-0 flex items-center justify-center gap-3">
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-amber-800/30"></div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-1 h-1 rounded-full bg-amber-700/40"></div>
+                                <div className="w-1.5 h-1.5 rounded-full bg-amber-700/50"></div>
+                                <div className="w-1 h-1 rounded-full bg-amber-700/40"></div>
+                            </div>
+                            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-amber-800/30"></div>
+                        </div>
                         <div className="text-center mb-6">
                             <h2 className="text-2xl font-bold text-gray-800 lg:mb-2">登入</h2>
                             <p className="text-gray-500">登入以管理您的寵物記錄</p>
